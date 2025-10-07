@@ -13,7 +13,7 @@ private:
 
 	enum CharType
 	{
-		Digit, Letter, Separatior, Operator, Punctuation, CharacterLiteral
+		Digit, Letter, Separatior, Operator, Punctuation
 	};
 
 	static void FindSymbol(bool (*callback)(char, string&), SymbolCode guessedCode);
@@ -27,7 +27,6 @@ private:
 	static bool FindIdentifierChar(char ch, string& buff);
 	static bool FindOperatorChar(char ch, string& buff);
 	static bool FindPunctuationChar(char ch, string& buff);
-	static bool FindCharacterLiteralChar(char ch, string& buff);
 
 	static void GetNextLine();
 	static int GetEndWordPosition();

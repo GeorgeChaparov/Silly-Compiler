@@ -38,10 +38,6 @@ void Lex::BuildSymbolTable(string _document)
 			case Punctuation:
 				FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
 				break;
-
-			case CharacterLiteral:
-				FindSymbol(FindCharacterLiteralChar, SymbolCode::CharacterLiteral);
-				break;
 			default:
 				break;
 			}
@@ -113,8 +109,7 @@ Lex::CharType Lex::GetCharType(char ch)
 	unsigned int ascii = static_cast<int>(ch);
 
 	if ((ascii >= UPPER_CASE_LETTERS_MIN_CODE && ascii <= UPPER_CASE_LETTERS_MAX_CODE) ||
-		(ascii >= LOWER_CASE_LETTERS_MIN_CODE && ascii <= LOWER_CASE_LETTERS_MAX_CODE) ||
-		IsInSet(ch, SPECIAL_IDENTIFIER_CHARS, SPECIAL_IDENTIFIER_SET_LENGTH))
+		(ascii >= LOWER_CASE_LETTERS_MIN_CODE && ascii <= LOWER_CASE_LETTERS_MAX_CODE))
 	{
 		return CharType::Letter;
 	}
@@ -122,18 +117,13 @@ Lex::CharType Lex::GetCharType(char ch)
 	{
 		return CharType::Digit;
 	}
-	else if (IsInSet(std::string() + ch, OPERATORS, OPERATORS_SET_LENGTH) || IsInSet(ch, START_OPERATOR_SYMBOL, START_OPERATOR_SYMBOL_SET_LENGTH))
+	else if (IsInSet(std::string() + ch, OPERATORS, OPERATORS_SET_LENGTH))
 	{
 		return CharType::Operator;
 	}
 	else if (IsInSet(ch, PUNCTUATION, PUNCTUATION_SET_LENGTH))
 	{
 		return CharType::Punctuation;
-	}
-	// that the ascii code for '.
-	else if (ascii == 39)
-	{
-		return CharType::CharacterLiteral;
 	}
 
 	//Error: unknown character.
@@ -218,7 +208,8 @@ bool Lex::FindIdentifierChar(char ch, string& buff)
 		buff.push_back(ch);
 		break;
 	case Letter:
-		buff.push_back(ch);
+		//Error: Identifiers can be only one character long.
+		throw std::runtime_error(string("Identifiers can be only one character long: ") + buff + '|' + ch + '|' + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
 		break;
 	case Operator:
 		FindSymbol(FindOperatorChar, SymbolCode::Operator);
@@ -275,7 +266,7 @@ bool Lex::FindOperatorChar(char ch, string& buff)
 					throw std::runtime_error("Unknown token: " + buff + ch + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
 				}
 			}
-			else if (IsInSet(buff, OPERATORS, OPERATORS_SET_LENGTH) || IsInSet(buff, START_OPERATOR_SYMBOL, START_OPERATOR_SYMBOL_SET_LENGTH))
+			else if (IsInSet(buff, OPERATORS, OPERATORS_SET_LENGTH))
 			{
 				buff.push_back(ch);
 			}
@@ -333,60 +324,6 @@ bool Lex::FindPunctuationChar(char ch, string& buff)
 		throw std::runtime_error(string("Forbidden character: ") + buff + '|' + ch + '|' + document.substr(currentPosition, GetEndWordPosition() - currentPosition));
 		break;
 	}
-	return foundAnotherSymbol;
-}
-
-bool Lex::FindCharacterLiteralChar(char ch, string& buff)
-{
-	bool foundAnotherSymbol = false;
-
-	int buffLength = buff.length();
-	if (buffLength >= 3)
-	{
-		switch (GetCharType(ch))
-		{
-		case Separatior:
-			break;
-		case Digit:
-			FindSymbol(FindIntegerChar, SymbolCode::IntegerLiteral);
-			break;
-		case Letter:
-			FindSymbol(FindIdentifierChar, SymbolCode::Identifier);
-			break;
-		case Punctuation:
-			FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
-			break;
-		case Operator:
-			FindSymbol(FindOperatorChar, SymbolCode::Operator);
-			break;
-
-		default:
-			break;
-		}
-		foundAnotherSymbol = true;
-	}
-	else if (buffLength == 1)
-	{
-		if (static_cast<int>(ch) == 39)
-		{
-			throw std::runtime_error("empty char literal is not valid");
-		}
-		else
-		{
-			buff.push_back(ch);
-		}
-
-	}
-	else if (static_cast<int>(ch) == 39)
-	{
-		buff = buff[1];
-		foundAnotherSymbol = true;
-	}
-	else
-	{
-		throw std::runtime_error("There is an ' for the beginning of a char literal, but there isn't one to close it or there is more then one character between them.");
-	}
-
 	return foundAnotherSymbol;
 }
 

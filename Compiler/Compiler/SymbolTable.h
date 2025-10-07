@@ -14,7 +14,6 @@ enum SymbolCode
 	Operator,
 	Punctuation,
 	IntegerLiteral,
-	CharacterLiteral,
 };
 
 struct SymbolTableItem
