@@ -1,0 +1,29 @@
+#include "SymbolTable.h"
+#include <string>
+#include <iostream>
+#include "Lex.h"
+#include <fstream>
+#include <sstream>
+
+using namespace std;
+int main() {
+
+	std::ifstream file("C:\\Users\\gigoto\\source\\repos\\HeshFunction\\HeshFunction\\source.txt");
+	if (!file) {
+		std::cerr << "Failed to open file\n";
+		return 1;
+	}
+
+	std::ostringstream buffer;
+	buffer << file.rdbuf();
+
+	string fileStream = buffer.str();
+	SymbolTable::Init();
+
+	Lex::BuildSymbolTable(fileStream);
+
+	cout << endl << endl << "File:" << endl << fileStream << endl << endl;
+
+	SymbolTable::Log();
+	return 0;
+}

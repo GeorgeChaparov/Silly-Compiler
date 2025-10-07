@@ -1,0 +1,49 @@
+#pragma once
+
+#include <string>
+#include <iostream>
+
+using string = std::string;
+
+const int TABLE_SIZE = 10000;
+
+enum SymbolCode
+{
+	Keyword = 1,
+	Identifier,
+	Operator,
+	Punctuation,
+	IntegerLiteral,
+	CharacterLiteral,
+};
+
+struct SymbolTableItem
+{
+	string symbol;
+	SymbolCode code;
+
+	void Log()
+	{
+		std::cout << "Symbol: '" << symbol << "', Code: " << code << std::endl;
+	}
+};
+
+class SymbolTable
+{
+public:
+	static void Init();
+
+	static size_t AddItem(SymbolTableItem& item);
+	static size_t AddItem(string name, SymbolCode code);
+
+	static size_t GetPosition(SymbolTableItem& item);
+
+	static bool Has(SymbolTableItem& item, size_t& position);
+
+	static void Log();
+
+private:
+	static unsigned int GetHash(SymbolTableItem& item);
+	static SymbolTableItem** m_HashTable;
+	static void LogError(string message);
+};
