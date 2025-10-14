@@ -14,6 +14,7 @@ enum SymbolCode
 	Operator,
 	Punctuation,
 	IntegerLiteral,
+	FlowControl
 };
 
 struct SymbolTableItem
@@ -34,6 +35,7 @@ public:
 
 	static size_t AddItem(SymbolTableItem& item);
 	static size_t AddItem(string name, SymbolCode code);
+	static size_t AddItem(char name, SymbolCode code);
 
 	static size_t GetPosition(SymbolTableItem& item);
 

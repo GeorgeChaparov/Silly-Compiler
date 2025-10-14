@@ -8,15 +8,17 @@ using string = std::string;
 class Lex
 {
 public:
-	static void BuildSymbolTable(string document);
+	static void Init(string document);
 private:
 
 	enum CharType
 	{
-		Digit, Letter, Separatior, Operator, Punctuation
+		Digit, Letter, Separatior, Operator, Punctuation, FlowControl
 	};
 
 	static void FindSymbol(bool (*callback)(char, string&), SymbolCode guessedCode);
+
+	static int GetNextSymbol();
 
 	static CharType GetCharType(char ch);
 	static bool AddWordIfKeyword(string word);

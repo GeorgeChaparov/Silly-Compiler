@@ -1,6 +1,7 @@
 #include "SymbolTable.h"
 #include <iostream>
 #include "Utils.h"
+#include <string>
 
 using string = std::string;
 
@@ -31,6 +32,13 @@ size_t SymbolTable::AddItem(SymbolTableItem& item)
 size_t SymbolTable::AddItem(string name, SymbolCode code)
 {
 	SymbolTableItem* item = new SymbolTableItem{ name, code };
+
+	return AddItem(*item);
+}
+
+size_t SymbolTable::AddItem(char name, SymbolCode code)
+{
+	SymbolTableItem* item = new SymbolTableItem{string() + name, code };
 
 	return AddItem(*item);
 }

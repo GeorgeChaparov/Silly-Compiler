@@ -1,13 +1,22 @@
 #include <string>
 #include "Utils.h"
 
-const std::string OPERATORS[] = { "::::", ";;;;", "::;;", ";;::", ":;", ":::"};
+const std::string OPERATORS[] = { 
+	"::::", //	+
+	";;;;", //	-
+	"::;;", //	*
+	";;::",	//	/
+	":;",	//	>
+	":::",	//	==
+	"::"	//	=
+};
+
 const char SEPARATIORS[] = { ' ', '\n', '\r', '\t' };
 const std::string KEYWORDS[] = {
-	 ":",
-	 ";",
-	 ";(",
-	 ";)"
+	 ":",	//	if / while
+	 ";;"	//	else-if / else
+	 "(;)",	//	cout
+	 "(:)"	//	cin
 };
 const char PUNCTUATION[] = {'(', ')'};
 

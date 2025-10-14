@@ -8,7 +8,7 @@
 using namespace std;
 int main() {
 
-	std::ifstream file("C:\\Users\\gigoto\\source\\repos\\HeshFunction\\HeshFunction\\source.txt");
+	std::ifstream file("D:\\GitHub\\New folder\\Silly-Compiler\\Compiler\\Compiler\\Source.txt");
 	if (!file) {
 		std::cerr << "Failed to open file\n";
 		return 1;
@@ -20,7 +20,7 @@ int main() {
 	string fileStream = buffer.str();
 	SymbolTable::Init();
 
-	Lex::BuildSymbolTable(fileStream);
+	Lex::Init(fileStream);
 
 	cout << endl << endl << "File:" << endl << fileStream << endl << endl;
 

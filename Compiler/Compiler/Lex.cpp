@@ -6,42 +6,41 @@
 string document = "";
 size_t currentPosition = 0;
 
-void Lex::BuildSymbolTable(string _document)
+int Lex::GetNextSymbol()
 {
 	try
 	{
-		document = _document;
-		currentPosition = 0;
+		string buff = "";
+		size_t tableIndex = -1;
 
-		// Goes through every character and checks for different types of tokens.
-		for (currentPosition = 0; currentPosition < document.length(); currentPosition++)
+		char ch = document[currentPosition];
+		switch (GetCharType(ch))
 		{
-			char ch = document[currentPosition];
+		case Separatior:
+			break;
 
-			switch (GetCharType(ch))
-			{
-			case Separatior:
-				break;
+		case Operator:
+			FindSymbol(FindOperatorChar, SymbolCode::Operator);
+			SymbolTable::AddItem(buff, SymbolCode::Operator);
+			break;
 
-			case Operator:
-				FindSymbol(FindOperatorChar, SymbolCode::Operator);
-				break;
+		case Digit:
+			FindSymbol(FindIntegerChar, SymbolCode::IntegerLiteral);
+			break;
 
-			case Digit:
-				FindSymbol(FindIntegerChar, SymbolCode::IntegerLiteral);
-				break;
+		case Letter:
+			tableIndex = SymbolTable::AddItem(ch, SymbolCode::Identifier);
+			break;
 
-			case Letter:
-				FindSymbol(FindIdentifierChar, SymbolCode::Identifier);
-				break;
+		case Punctuation:
+			FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
+			break;
 
-			case Punctuation:
-				FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
-				break;
-			default:
-				break;
-			}
+		default:
+			break;
 		}
+
+		return tableIndex;
 	}
 	catch (const std::exception& error)
 	{
@@ -49,19 +48,22 @@ void Lex::BuildSymbolTable(string _document)
 	}
 }
 
-void Lex::FindSymbol(bool (*callback)(char, string&), SymbolCode guessedCode)
+void Lex::Init(string _document)
 {
-	string buff = "";
+	document = _document;
+	currentPosition = 0;
+}
+
+void Lex::FindSymbol(bool (*callback)(char, string&), string& buff, SymbolCode guessedCode)
+{
 	buff.push_back(document[currentPosition]);
 
 	size_t nextPosition = currentPosition + 1;
 	char ch = document[nextPosition];
 
 	// In case is the last char or the word is only one char.
-	if (ch == '\0' || (guessedCode != SymbolCode::CharacterLiteral && IsInSet(ch, SEPARATIORS, SEPARATIORS_SET_LENGTH)))
+	if (ch == '\0' || ( IsInSet(ch, SEPARATIORS, SEPARATIORS_SET_LENGTH)))
 	{
-		SymbolTable::AddItem(buff, guessedCode);
-
 		return;
 	}
 
@@ -195,138 +197,6 @@ bool Lex::FindIntegerChar(char ch, string& buff)
 	}
 	return foundAnotherSymbol;
 }
-
-bool Lex::FindIdentifierChar(char ch, string& buff)
-{
-	bool foundAnotherSymbol = false;
-
-	switch (GetCharType(ch))
-	{
-	case Separatior:
-		break;
-	case Digit:
-		buff.push_back(ch);
-		break;
-	case Letter:
-		//Error: Identifiers can be only one character long.
-		throw std::runtime_error(string("Identifiers can be only one character long: ") + buff + '|' + ch + '|' + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-		break;
-	case Operator:
-		FindSymbol(FindOperatorChar, SymbolCode::Operator);
-		foundAnotherSymbol = true;
-		break;
-	case Punctuation:
-		FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
-		foundAnotherSymbol = true;
-		break;
-	default:
-		//Error: Forbidden character.
-		throw std::runtime_error(string("Forbidden character: ") + buff + '|' + ch + '|' + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-		break;
-	}
-	return foundAnotherSymbol;
-}
-
-bool Lex::FindOperatorChar(char ch, string& buff)
-{
-	bool foundAnotherSymbol = false;
-
-	switch (GetCharType(ch))
-	{
-	case Separatior:
-		break;
-	case Operator:
-		if (buff.length() > 1)
-		{
-			if (ch == buff[buff.length() - 1] && ch != buff[buff.length() - 2])
-			{
-				buff.push_back(ch);
-			}
-			else
-			{
-				//Error: Unknown token, can be ===, +++ or any other threple operator.
-				throw std::runtime_error("Unknown token: " + buff + ch + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-			}
-		}
-		else
-		{
-			if (ch == buff[buff.length() - 1])
-			{
-				buff.push_back(ch);
-
-				if (buff == "//")
-				{
-					GetNextLine();
-					foundAnotherSymbol = true;
-				}
-
-				else if (!IsInSet(buff, OPERATORS, OPERATORS_SET_LENGTH))
-				{
-					//Error: Unknown token
-					throw std::runtime_error("Unknown token: " + buff + ch + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-				}
-			}
-			else if (IsInSet(buff, OPERATORS, OPERATORS_SET_LENGTH))
-			{
-				buff.push_back(ch);
-			}
-			else
-			{
-				//Error: Unknown token
-				throw std::runtime_error("Unknown token: " + buff + ch + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-			}
-		}
-
-		break;
-	case Digit:
-		FindSymbol(FindIntegerChar, SymbolCode::IntegerLiteral);
-		foundAnotherSymbol = true;
-		break;
-	case Letter:
-		FindSymbol(FindIdentifierChar, SymbolCode::Identifier);
-		foundAnotherSymbol = true;
-		break;
-	case Punctuation:
-		FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
-		foundAnotherSymbol = true;
-		break;
-	default:
-		//Error: Forbidden character.
-		throw std::runtime_error(string("Forbidden character: ") + buff + '|' + ch + '|' + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-		break;
-	}
-	return foundAnotherSymbol;
-}
-
-bool Lex::FindPunctuationChar(char ch, string& buff)
-{
-	bool foundAnotherSymbol = false;
-
-	switch (GetCharType(ch))
-	{
-	case Separatior:
-		break;
-
-	case Punctuation:
-		FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
-		foundAnotherSymbol = true;
-		break;
-	case Digit:
-		FindSymbol(FindIntegerChar, SymbolCode::IntegerLiteral);
-		foundAnotherSymbol = true;
-		break;
-	case Letter:
-		FindSymbol(FindIdentifierChar, SymbolCode::Identifier);
-		foundAnotherSymbol = true;
-		break;
-	default:
-		//Error: Forbidden character.
-		throw std::runtime_error(string("Forbidden character: ") + buff + '|' + ch + '|' + document.substr(currentPosition, GetEndWordPosition() - currentPosition));
-		break;
-	}
-	return foundAnotherSymbol;
-}
-
 void Lex::GetNextLine()
 {
 	while (document[currentPosition] != '\n')
