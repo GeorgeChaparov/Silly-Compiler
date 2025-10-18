@@ -13,22 +13,21 @@ private:
 
 	enum CharType
 	{
-		Digit, Letter, Separator, Operator, Punctuation, FlowControl
+		Unsure = 0, Digit, Letter, Separator, Operator, Punctuation, FlowControl, Compareson, Keyword
 	};
-
-	static void FindSymbol(bool (*callback)(char, string&), SymbolCode guessedCode);
 
 	static int GetNextSymbol();
 
 	static CharType GetCharType(char ch);
-	static bool AddWordIfKeyword(string word);
+
+	static size_t FindIntegerChar(char ch);
+	static bool FindOperatorChar(char ch, string& buff);
+
+	static bool IsDigit(unsigned int ascii);
+	static bool IsDigit(char ch);
+
 	static bool IsInSet(char ch, auto set, size_t setLength);
 	static bool IsInSet(string word, auto set, size_t setLength);
-
-	static bool FindIntegerChar(char ch, string& buff);
-	static bool FindIdentifierChar(char ch, string& buff);
-	static bool FindOperatorChar(char ch, string& buff);
-	static bool FindPunctuationChar(char ch, string& buff);
 
 	static void GetNextLine();
 	static int GetEndWordPosition();

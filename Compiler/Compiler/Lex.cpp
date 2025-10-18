@@ -19,13 +19,8 @@ int Lex::GetNextSymbol()
 		case Separator:
 			break;
 
-		case Operator:
-			FindSymbol(FindOperatorChar, SymbolCode::Operator);
-			SymbolTable::AddItem(buff, SymbolCode::Operator);
-			break;
-
 		case Digit:
-			FindSymbol(FindIntegerChar, SymbolCode::IntegerLiteral);
+			tableIndex = FindIntegerChar(ch);
 			break;
 
 		case Letter:
@@ -33,9 +28,16 @@ int Lex::GetNextSymbol()
 			break;
 
 		case Punctuation:
-			FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
+			tableIndex = SymbolTable::AddItem(ch, SymbolCode::Punctuation);
 			break;
 
+		case Keyword:
+			tableIndex = SymbolTable::AddItem(ch + document[++currentPosition], SymbolCode::Keyword);
+			break;
+
+		case Unsure:
+
+			break;
 		default:
 			break;
 		}
@@ -54,53 +56,6 @@ void Lex::Init(string _document)
 	currentPosition = 0;
 }
 
-void Lex::FindSymbol(bool (*callback)(char, string&), string& buff, SymbolCode guessedCode)
-{
-	buff.push_back(document[currentPosition]);
-
-	size_t nextPosition = currentPosition + 1;
-	char ch = document[nextPosition];
-
-	// In case is the last char or the word is only one char.
-	if (ch == '\0' || ( IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH)))
-	{
-		return;
-	}
-
-	++currentPosition;
-
-	// While the current char is not a separator.
-	do
-	{
-		// If the callback return true, that means that we have found another token that is concatenated to that one (int a=... , a+b..., exp;...)
-		if (callback(ch, buff))
-		{
-			break;
-		}
-
-		// Checking if we are at the end of the stream. 
-		ch = document[++currentPosition];
-		if (ch == '\0')
-		{
-			break;
-		}
-	} while (!IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH));
-
-	// Checking if the found token is a keyword and if so we are adding it to the symbol table.
-	if (AddWordIfKeyword(buff))
-	{
-		return;
-	}
-	// If its not a keyword, we are checking if its a comment.
-	else if (buff == "//")
-	{
-		return;
-	}
-
-	// If we are at this point, we have guessed correctly and we can add the token.
-	SymbolTable::AddItem(buff, guessedCode);
-}
-
 Lex::CharType Lex::GetCharType(char ch)
 {
 	if (IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH))
@@ -115,17 +70,21 @@ Lex::CharType Lex::GetCharType(char ch)
 	{
 		return CharType::Letter;
 	}
-	else if (ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE)
+	else if (IsDigit(ascii))
 	{
 		return CharType::Digit;
 	}
-	else if (IsInSet(std::string() + ch, OPERATORS, OPERATORS_SET_LENGTH))
+	else if (ch == '-')
 	{
-		return CharType::Operator;
+		return CharType::Keyword;
 	}
 	else if (IsInSet(ch, PUNCTUATION, PUNCTUATION_SET_LENGTH))
 	{
 		return CharType::Punctuation;
+	}
+	else if (ch == ';' || ch == ':')
+	{
+		return CharType::Unsure;
 	}
 
 	//Error: unknown character.
@@ -160,18 +119,24 @@ bool Lex::IsInSet(string word, auto set, size_t setLength)
 	return false;
 }
 
-bool Lex::AddWordIfKeyword(string word)
+size_t Lex::FindIntegerChar(char ch)
 {
-	if (IsInSet(word, KEYWORDS, KEYWORDS_SET_LENGTH))
+	string buff = "";
+	size_t index = currentPosition;
+	do
 	{
-		SymbolTable::AddItem(word, SymbolCode::Keyword);
-		return true;
-	}
+		buff.push_back(ch);
 
-	return false;
+		ch = document[++index];
+	} while (IsDigit(ch));
+
+
+	currentPosition = --index;
+
+	return SymbolTable::AddItem(buff, SymbolCode::IntegerLiteral);
 }
 
-bool Lex::FindIntegerChar(char ch, string& buff)
+/*bool Lex::FindOperatorChar(char ch, string& buff)
 {
 	bool foundAnotherSymbol = false;
 
@@ -186,17 +151,13 @@ bool Lex::FindIntegerChar(char ch, string& buff)
 		FindSymbol(FindOperatorChar, SymbolCode::Operator);
 		foundAnotherSymbol = true;
 		break;
-	case Punctuation:
-		FindSymbol(FindPunctuationChar, SymbolCode::Punctuation);
-		foundAnotherSymbol = true;
-		break;
-	default:
 		//Error: Forbidden character.
 		throw std::runtime_error(string("Forbidden character: ") + buff + '|' + ch + '|' + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
 		break;
 	}
 	return foundAnotherSymbol;
-}
+}*/
+
 void Lex::GetNextLine()
 {
 	while (document[currentPosition] != '\n')
@@ -215,4 +176,16 @@ int Lex::GetEndWordPosition()
 	}
 
 	return pos;
+}
+
+bool Lex::IsDigit(unsigned int ascii)
+{
+	return ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE;
+}
+
+bool Lex::IsDigit(char ch)
+{
+	unsigned int ascii = static_cast<int>(ch);
+
+	return ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE;
 }
