@@ -36,7 +36,7 @@ int Lex::GetNextSymbol()
 			break;
 
 		case Unsure:
-
+			tableIndex = AddUnknownToken(ch);
 			break;
 		default:
 			break;
@@ -82,7 +82,7 @@ Lex::CharType Lex::GetCharType(char ch)
 	{
 		return CharType::Punctuation;
 	}
-	else if (ch == ';' || ch == ':')
+	else if (IsSpecialPunctuationSymbol(ch))
 	{
 		return CharType::Unsure;
 	}
@@ -136,27 +136,78 @@ size_t Lex::FindIntegerChar(char ch)
 	return SymbolTable::AddItem(buff, SymbolCode::IntegerLiteral);
 }
 
-/*bool Lex::FindOperatorChar(char ch, string& buff)
+size_t Lex::AddUnknownToken(char ch)
 {
-	bool foundAnotherSymbol = false;
+	string buff = "";
 
-	switch (GetCharType(ch))
+	buff.push_back(ch);
+
+	
+	size_t index = currentPosition;
+	SymbolCode currentGuess = SymbolCode::Keyword;
+	int i = 0;
+
+	while (i < 4)
 	{
-	case Separator:
-		break;
-	case Digit:
-		buff.push_back(ch);
-		break;
-	case Operator:
-		FindSymbol(FindOperatorChar, SymbolCode::Operator);
-		foundAnotherSymbol = true;
-		break;
-		//Error: Forbidden character.
-		throw std::runtime_error(string("Forbidden character: ") + buff + '|' + ch + '|' + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
-		break;
+		char nextCh = document[++index];
+
+		if (!IsSpecialPunctuationSymbol(nextCh, true))
+		{
+			break;
+		}
+
+		if (nextCh == ':')
+		{
+			if (i == 1)
+			{
+			}
+			else if (i == 2)
+			{
+			}
+			else if (i == 3)
+			{
+			}
+			else if (i == 4)
+			{
+
+			}
+		}
+		else if (nextCh == ';')
+		{
+			if (i == 1)
+			{
+			}
+			else if (i == 2)
+			{
+			}
+			else if (i == 3)
+			{
+			}
+			else if (i == 4)
+			{
+
+			}
+		}
+		else
+		{
+			if (i == 1)
+			{
+			}
+			else if (i == 2)
+			{
+			}
+			else if (i == 3)
+			{
+			}
+			else if (i == 4)
+			{
+
+			}
+		}
+
+		i++;
 	}
-	return foundAnotherSymbol;
-}*/
+}
 
 void Lex::GetNextLine()
 {
@@ -188,4 +239,22 @@ bool Lex::IsDigit(char ch)
 	unsigned int ascii = static_cast<int>(ch);
 
 	return ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE;
+}
+
+bool Lex::IsSpecialPunctuationSymbol(char ch, bool includeDash = false)
+{
+	if (ch == ';' || ch == ':')
+	{
+		if (includeDash)
+		{
+			if (ch == '-')
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		return true;
+	}
 }

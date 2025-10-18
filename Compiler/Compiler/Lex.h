@@ -20,6 +20,8 @@ private:
 
 	static CharType GetCharType(char ch);
 
+	static size_t AddUnknownToken(char ch);
+
 	static size_t FindIntegerChar(char ch);
 	static bool FindOperatorChar(char ch, string& buff);
 
