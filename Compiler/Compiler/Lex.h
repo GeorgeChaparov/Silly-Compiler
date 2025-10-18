@@ -13,7 +13,7 @@ private:
 
 	enum CharType
 	{
-		Digit, Letter, Separatior, Operator, Punctuation, FlowControl
+		Digit, Letter, Separator, Operator, Punctuation, FlowControl
 	};
 
 	static void FindSymbol(bool (*callback)(char, string&), SymbolCode guessedCode);

@@ -11,7 +11,7 @@ const std::string OPERATORS[] = {
 	"::"	//	=
 };
 
-const char SEPARATIORS[] = { ' ', '\n', '\r', '\t' };
+const char SEPARATORS[] = { ' ', '\n', '\r', '\t' };
 const std::string KEYWORDS[] = {
 	 ":",	//	if / while
 	 ";;"	//	else-if / else
@@ -20,7 +20,7 @@ const std::string KEYWORDS[] = {
 };
 const char PUNCTUATION[] = {'(', ')'};
 
-const int SEPARATIORS_SET_LENGTH = GetArraySize(SEPARATIORS);
+const int SEPARATORS_SET_LENGTH = GetArraySize(SEPARATORS);
 const int OPERATORS_SET_LENGTH = GetArraySize(OPERATORS);
 const int KEYWORDS_SET_LENGTH = GetArraySize(KEYWORDS);
 const int PUNCTUATION_SET_LENGTH = GetArraySize(PUNCTUATION);

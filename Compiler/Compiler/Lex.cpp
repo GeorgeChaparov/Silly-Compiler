@@ -16,7 +16,7 @@ int Lex::GetNextSymbol()
 		char ch = document[currentPosition];
 		switch (GetCharType(ch))
 		{
-		case Separatior:
+		case Separator:
 			break;
 
 		case Operator:
@@ -62,7 +62,7 @@ void Lex::FindSymbol(bool (*callback)(char, string&), string& buff, SymbolCode g
 	char ch = document[nextPosition];
 
 	// In case is the last char or the word is only one char.
-	if (ch == '\0' || ( IsInSet(ch, SEPARATIORS, SEPARATIORS_SET_LENGTH)))
+	if (ch == '\0' || ( IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH)))
 	{
 		return;
 	}
@@ -84,7 +84,7 @@ void Lex::FindSymbol(bool (*callback)(char, string&), string& buff, SymbolCode g
 		{
 			break;
 		}
-	} while (!IsInSet(ch, SEPARATIORS, SEPARATIORS_SET_LENGTH));
+	} while (!IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH));
 
 	// Checking if the found token is a keyword and if so we are adding it to the symbol table.
 	if (AddWordIfKeyword(buff))
@@ -103,9 +103,9 @@ void Lex::FindSymbol(bool (*callback)(char, string&), string& buff, SymbolCode g
 
 Lex::CharType Lex::GetCharType(char ch)
 {
-	if (IsInSet(ch, SEPARATIORS, SEPARATIORS_SET_LENGTH))
+	if (IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH))
 	{
-		return CharType::Separatior;
+		return CharType::Separator;
 	}
 
 	unsigned int ascii = static_cast<int>(ch);
@@ -177,7 +177,7 @@ bool Lex::FindIntegerChar(char ch, string& buff)
 
 	switch (GetCharType(ch))
 	{
-	case Separatior:
+	case Separator:
 		break;
 	case Digit:
 		buff.push_back(ch);
@@ -209,7 +209,7 @@ int Lex::GetEndWordPosition()
 {
 	int pos = currentPosition + 1;
 
-	while (!IsInSet(document[pos], SEPARATIORS, SEPARATIORS_SET_LENGTH))
+	while (!IsInSet(document[pos], SEPARATORS, SEPARATORS_SET_LENGTH))
 	{
 		++pos;
 	}
