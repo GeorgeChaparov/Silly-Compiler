@@ -11,13 +11,21 @@ public:
 	static void Pars();
 	
 private:
-	static string* m_Token;
+	static SymbolTableItem* m_Token;
+	static int m_ExprLevel;
 
-	static string* GetNextToken();
+	static SymbolTableItem* GetNextToken();
 
 	static void Start();
 	static void Block();
 	static void Stms();
 	static void Stm();
+	static void ElseIf();
+	static void Expr();
+	static void Equality();
+	static void Comparison();
+	static void Term();
+	static void Factor();
+	static void Primary();
 };
 

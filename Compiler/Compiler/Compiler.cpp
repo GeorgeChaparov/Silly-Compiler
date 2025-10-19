@@ -22,9 +22,9 @@ int main() {
 
 	SymbolTable::Init();
 	Lex::Init(fileStream);
-	Parser::Pars();
+	//Parser::Pars();
 
-	//Lex::Build();
+	Lex::Build();
 
 	cout << endl << endl << "File:" << endl << fileStream << endl << endl;
 

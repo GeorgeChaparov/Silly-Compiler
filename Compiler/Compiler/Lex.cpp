@@ -29,7 +29,10 @@ void Lex::Init(string _document)
 	GrammarTrie::Insert(";-", SymbolCode::Keyword); 	//	continue
 	GrammarTrie::Insert("-;", SymbolCode::Keyword);		//	break
 	GrammarTrie::Insert(":", SymbolCode::Keyword); 		//	if / while
-	GrammarTrie::Insert(";;", SymbolCode::Keyword);		//	else-if / else
+	GrammarTrie::Insert(";;", SymbolCode::Keyword);		//	else-if 
+	GrammarTrie::Insert(";;-", SymbolCode::Keyword);	//  else
+	GrammarTrie::Insert(";-;", SymbolCode::Keyword);	//  &&
+	GrammarTrie::Insert(";-:", SymbolCode::Keyword);	//  ||
 }
 
 void Lex::Build()
