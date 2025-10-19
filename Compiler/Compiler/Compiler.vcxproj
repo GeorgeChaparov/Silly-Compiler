@@ -132,11 +132,13 @@
     <ClCompile Include="Consts.h" />
     <ClCompile Include="GrammarTrie.cpp" />
     <ClCompile Include="Lex.cpp" />
+    <ClCompile Include="Parser.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GrammarTrie.h" />
     <ClInclude Include="Lex.h" />
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

@@ -1,6 +1,6 @@
 #include <string>
 #include "Utils.h"
-const char SEPARATORS[] = { ' ', '\n', '\r', '\t'};
+const char SEPARATORS[] = { ' ', '\r', '\t'};
 
 const char PUNCTUATION[] = {'(', ')'};
 

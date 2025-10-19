@@ -6,6 +6,7 @@
 
 string Lex::m_Document = "";
 size_t Lex::m_CurrentPosition = 0;
+int Lex::m_CurrentLine = 1;
 
 void Lex::Init(string _document)
 {
@@ -51,40 +52,48 @@ int Lex::GetNextSymbol()
 		string buff = "";
 		size_t tableIndex = -2;
 
-		char ch = m_Document[m_CurrentPosition];
-		switch (GetCharType(ch))
+		while (tableIndex == -2)
 		{
-		case Separator:
-			break;
+			char ch = m_Document[m_CurrentPosition];
+			switch (GetCharType(ch))
+			{
+			case Separator:
+				break;
 
-		case Digit:
-			tableIndex = FindIntegerChar(ch);
-			break;
+			case NewLine:
+				++m_CurrentLine;
+				tableIndex = SymbolTable::AddItem(ch, SymbolCode::Keyword);
+				break;
 
-		case Letter:
-			tableIndex = SymbolTable::AddItem(ch, SymbolCode::Identifier);
-			break;
+			case Digit:
+				tableIndex = FindIntegerChar(ch);
+				break;
 
-		case Punctuation:
-			tableIndex = SymbolTable::AddItem(ch, SymbolCode::Punctuation);
-			break;
+			case Letter:
+				tableIndex = SymbolTable::AddItem(ch, SymbolCode::Identifier);
+				break;
 
-		case Keyword:
-			tableIndex = SymbolTable::AddItem(string() + ch + m_Document[++m_CurrentPosition], SymbolCode::Keyword);
-			break;
+			case Punctuation:
+				tableIndex = SymbolTable::AddItem(ch, SymbolCode::Punctuation);
+				break;
 
-		case FileEnd:
-			tableIndex = -1;
-			break;
+			case Keyword:
+				tableIndex = SymbolTable::AddItem(string() + ch + m_Document[++m_CurrentPosition], SymbolCode::Keyword);
+				break;
 
-		case Unsure:
-			tableIndex = AddUnknownToken(ch);
-			break;
-		default:
-			break;
+			case FileEnd:
+				tableIndex = -1;
+				break;
+
+			case Unsure:
+				tableIndex = AddUnknownToken(ch);
+				break;
+			default:
+				break;
+			}
+
+			++m_CurrentPosition;
 		}
-
-		++m_CurrentPosition;
 
 		return tableIndex;
 	}
@@ -100,6 +109,11 @@ Lex::CharType Lex::GetCharType(char ch)
 	if (IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH))
 	{
 		return CharType::Separator;
+	}
+
+	if (ch == '\n')
+	{
+		return CharType::NewLine;
 	}
 
 	if (ch == '\0')
@@ -257,4 +271,9 @@ bool Lex::IsSpecialPunctuationSymbol(char ch, bool includeDash)
 	}
 
 	return isSpecial;
+}
+
+int Lex::GetCurrentLineCount()
+{
+	return m_CurrentLine;
 }

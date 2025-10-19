@@ -1,9 +1,10 @@
 #include "SymbolTable.h"
 #include <string>
 #include <iostream>
-#include "Lex.h"
 #include <fstream>
 #include <sstream>
+#include "Lex.h"
+#include "Parser.h"
 
 using namespace std;
 int main() {
@@ -18,10 +19,12 @@ int main() {
 	buffer << file.rdbuf();
 
 	string fileStream = buffer.str();
-	SymbolTable::Init();
 
+	SymbolTable::Init();
 	Lex::Init(fileStream);
-	Lex::Build();
+	Parser::Pars();
+
+	//Lex::Build();
 
 	cout << endl << endl << "File:" << endl << fileStream << endl << endl;
 

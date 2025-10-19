@@ -106,3 +106,8 @@ void SymbolTable::Log()
 		}
 	}
 }
+
+SymbolTableItem* SymbolTable::GetElementAt(size_t index)
+{
+	return m_HashTable[index];
+}

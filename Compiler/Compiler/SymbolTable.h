@@ -43,6 +43,8 @@ public:
 
 	static void Log();
 
+	static SymbolTableItem* GetElementAt(size_t index);
+
 private:
 	static unsigned int GetHash(SymbolTableItem& item);
 	static SymbolTableItem** m_HashTable;

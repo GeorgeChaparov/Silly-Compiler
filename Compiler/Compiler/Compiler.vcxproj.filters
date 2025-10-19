@@ -28,6 +28,9 @@
     <Filter Include="Source Files\GrammarTrie">
       <UniqueIdentifier>{d5e8a3a1-b75a-4c82-a23a-ad1af0bda39c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Parser">
+      <UniqueIdentifier>{c55db2e5-efb8-400a-af73-a58ea19e12ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lex.cpp">
@@ -45,6 +48,9 @@
     <ClCompile Include="GrammarTrie.cpp">
       <Filter>Source Files\GrammarTrie</Filter>
     </ClCompile>
+    <ClCompile Include="Parser.cpp">
+      <Filter>Source Files\Parser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lex.h">
@@ -58,6 +64,9 @@
     </ClInclude>
     <ClInclude Include="GrammarTrie.h">
       <Filter>Source Files\GrammarTrie</Filter>
+    </ClInclude>
+    <ClInclude Include="Parser.h">
+      <Filter>Source Files\Parser</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

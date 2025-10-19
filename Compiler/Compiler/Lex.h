@@ -11,16 +11,18 @@ public:
 	static void Init(string document);
 	static int GetNextSymbol();
 	static void Build();
+	static int GetCurrentLineCount();
 private:
 
 	enum CharType
 	{
-		Unsure = 0, Digit, Letter, Separator, Operator, Punctuation, FlowControl, Compareson, Keyword, FileEnd
+		Unsure = 0, Digit, Letter, Separator, Operator, Punctuation, FlowControl, Compareson, Keyword, FileEnd, NewLine
 	};
 
 
 	static string m_Document;
 	static size_t m_CurrentPosition;
+	static int m_CurrentLine;
 
 	static CharType GetCharType(char ch);
 
