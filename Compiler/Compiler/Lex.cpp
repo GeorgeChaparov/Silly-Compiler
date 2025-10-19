@@ -2,18 +2,56 @@
 #include "Consts.h"
 #include "Utils.h"
 #include "SymbolTable.h"
+#include "GrammarTrie.h"
 
-string document = "";
-size_t currentPosition = 0;
+string Lex::m_Document = "";
+size_t Lex::m_CurrentPosition = 0;
+
+void Lex::Init(string _document)
+{
+	m_Document = _document;
+	m_CurrentPosition = 0;
+
+	// Building the Trie.
+	GrammarTrie::Insert("::::", SymbolCode::Operator);	//	+
+	GrammarTrie::Insert(";;;;", SymbolCode::Operator);	//	-
+	GrammarTrie::Insert("::;;", SymbolCode::Operator);	//	*
+	GrammarTrie::Insert(";;::", SymbolCode::Operator);	//	/
+	GrammarTrie::Insert("::", SymbolCode::Operator);	//	=
+
+	GrammarTrie::Insert(":;", SymbolCode::Operator);	//	>
+	GrammarTrie::Insert(":::", SymbolCode::Operator);	//	==
+
+	GrammarTrie::Insert(":-", SymbolCode::Keyword);		//	cout
+	GrammarTrie::Insert("-:", SymbolCode::Keyword);		//	cin
+
+	GrammarTrie::Insert(";-", SymbolCode::Keyword); 	//	continue
+	GrammarTrie::Insert("-;", SymbolCode::Keyword);		//	break
+	GrammarTrie::Insert(":", SymbolCode::Keyword); 		//	if / while
+	GrammarTrie::Insert(";;", SymbolCode::Keyword);		//	else-if / else
+}
+
+void Lex::Build()
+{
+	try
+	{
+		while (GetNextSymbol() != -1);
+	}
+	catch (const std::exception&)
+	{
+		return;
+	}
+	
+}
 
 int Lex::GetNextSymbol()
 {
 	try
 	{
 		string buff = "";
-		size_t tableIndex = -1;
+		size_t tableIndex = -2;
 
-		char ch = document[currentPosition];
+		char ch = m_Document[m_CurrentPosition];
 		switch (GetCharType(ch))
 		{
 		case Separator:
@@ -32,7 +70,11 @@ int Lex::GetNextSymbol()
 			break;
 
 		case Keyword:
-			tableIndex = SymbolTable::AddItem(ch + document[++currentPosition], SymbolCode::Keyword);
+			tableIndex = SymbolTable::AddItem(string() + ch + m_Document[++m_CurrentPosition], SymbolCode::Keyword);
+			break;
+
+		case FileEnd:
+			tableIndex = -1;
 			break;
 
 		case Unsure:
@@ -42,18 +84,15 @@ int Lex::GetNextSymbol()
 			break;
 		}
 
+		++m_CurrentPosition;
+
 		return tableIndex;
 	}
 	catch (const std::exception& error)
 	{
 		std::cout << error.what() << std::endl;
+		throw error;
 	}
-}
-
-void Lex::Init(string _document)
-{
-	document = _document;
-	currentPosition = 0;
 }
 
 Lex::CharType Lex::GetCharType(char ch)
@@ -61,6 +100,11 @@ Lex::CharType Lex::GetCharType(char ch)
 	if (IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH))
 	{
 		return CharType::Separator;
+	}
+
+	if (ch == '\0')
+	{
+		return CharType::FileEnd;
 	}
 
 	unsigned int ascii = static_cast<int>(ch);
@@ -87,8 +131,8 @@ Lex::CharType Lex::GetCharType(char ch)
 		return CharType::Unsure;
 	}
 
-	//Error: unknown character.
-	throw std::runtime_error(string("Unknown character: ") + ch + document.substr(currentPosition + 1, GetEndWordPosition() - currentPosition));
+	// Error: unknown character.
+	throw std::runtime_error(string("Unknown character: ") + ch);
 }
 
 bool Lex::IsInSet(char ch, auto set, size_t setLength)
@@ -105,33 +149,19 @@ bool Lex::IsInSet(char ch, auto set, size_t setLength)
 	return false;
 }
 
-bool Lex::IsInSet(string word, auto set, size_t setLength)
-{
-	for (size_t i = 0; i < setLength; i++)
-	{
-		string current = std::string() + set[i];
-		if (word._Equal(current))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 size_t Lex::FindIntegerChar(char ch)
 {
 	string buff = "";
-	size_t index = currentPosition;
+	size_t index = m_CurrentPosition;
 	do
 	{
 		buff.push_back(ch);
 
-		ch = document[++index];
+		ch = m_Document[++index];
 	} while (IsDigit(ch));
 
 
-	currentPosition = --index;
+	m_CurrentPosition = --index;
 
 	return SymbolTable::AddItem(buff, SymbolCode::IntegerLiteral);
 }
@@ -143,87 +173,58 @@ size_t Lex::AddUnknownToken(char ch)
 	buff.push_back(ch);
 
 	
-	size_t index = currentPosition;
-	SymbolCode currentGuess = SymbolCode::Keyword;
-	int i = 0;
+	size_t index = m_CurrentPosition;
 
+	size_t i = 1;
+
+	bool includeDashInSearch = true;
 	while (i < 4)
 	{
-		char nextCh = document[++index];
-
-		if (!IsSpecialPunctuationSymbol(nextCh, true))
+		char nextCh = m_Document[++index];
+		if (!IsSpecialPunctuationSymbol(nextCh, includeDashInSearch))
 		{
 			break;
 		}
 
-		if (nextCh == ':')
-		{
-			if (i == 1)
-			{
-			}
-			else if (i == 2)
-			{
-			}
-			else if (i == 3)
-			{
-			}
-			else if (i == 4)
-			{
+		buff.push_back(nextCh);
+		++i;
+	}
 
-			}
-		}
-		else if (nextCh == ';')
-		{
-			if (i == 1)
-			{
-			}
-			else if (i == 2)
-			{
-			}
-			else if (i == 3)
-			{
-			}
-			else if (i == 4)
-			{
+	if (i != 4)
+	{
+		--index;
+	}
 
-			}
-		}
-		else
-		{
-			if (i == 1)
-			{
-			}
-			else if (i == 2)
-			{
-			}
-			else if (i == 3)
-			{
-			}
-			else if (i == 4)
-			{
+	m_CurrentPosition = index;
 
-			}
-		}
+	try
+	{
+		TrieNode* node = GrammarTrie::Find(buff);
 
-		i++;
+		return SymbolTable::AddItem(node->tokenValue, node->tokenType);
+	}
+	catch (const std::exception& error)
+	{
+		throw std::runtime_error(string("Unknown token: ") + buff + m_Document.substr(m_CurrentPosition + 1, m_CurrentPosition + 1 + i));
 	}
 }
 
 void Lex::GetNextLine()
 {
-	while (document[currentPosition] != '\n')
+	while (m_Document[m_CurrentPosition] != '\n')
 	{
-		++currentPosition;
+		++m_CurrentPosition;
 	}
 }
 
 int Lex::GetEndWordPosition()
 {
-	int pos = currentPosition + 1;
+	int pos = m_CurrentPosition + 1;
+	char ch = m_Document[pos];
 
-	while (!IsInSet(document[pos], SEPARATORS, SEPARATORS_SET_LENGTH))
+	while (!IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH) && ch != '\0')
 	{
-		++pos;
+		ch = m_Document[++pos];
 	}
 
 	return pos;
@@ -241,20 +242,19 @@ bool Lex::IsDigit(char ch)
 	return ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE;
 }
 
-bool Lex::IsSpecialPunctuationSymbol(char ch, bool includeDash = false)
+bool Lex::IsSpecialPunctuationSymbol(char ch, bool includeDash)
 {
+	bool isSpecial = false;
+
 	if (ch == ';' || ch == ':')
 	{
-		if (includeDash)
-		{
-			if (ch == '-')
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		return true;
+		isSpecial = true;
 	}
+
+	if (includeDash && ch == '-')
+	{
+		isSpecial = true;
+	}
+
+	return isSpecial;
 }

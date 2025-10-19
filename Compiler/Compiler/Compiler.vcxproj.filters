@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Utils\Consts">
       <UniqueIdentifier>{05dd51e4-17b4-4857-8a74-88f39a1dfe1e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GrammarTrie">
+      <UniqueIdentifier>{d5e8a3a1-b75a-4c82-a23a-ad1af0bda39c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lex.cpp">
@@ -39,6 +42,9 @@
     <ClCompile Include="Consts.h">
       <Filter>Source Files\Utils\Consts</Filter>
     </ClCompile>
+    <ClCompile Include="GrammarTrie.cpp">
+      <Filter>Source Files\GrammarTrie</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lex.h">
@@ -49,6 +55,9 @@
     </ClInclude>
     <ClInclude Include="Utils.h">
       <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GrammarTrie.h">
+      <Filter>Source Files\GrammarTrie</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

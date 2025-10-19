@@ -9,6 +9,7 @@ const int TABLE_SIZE = 10000;
 
 enum SymbolCode
 {
+	Unknown = -1,
 	Keyword = 1,
 	Identifier,
 	Operator,

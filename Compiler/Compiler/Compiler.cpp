@@ -21,6 +21,7 @@ int main() {
 	SymbolTable::Init();
 
 	Lex::Init(fileStream);
+	Lex::Build();
 
 	cout << endl << endl << "File:" << endl << fileStream << endl << endl;
 
