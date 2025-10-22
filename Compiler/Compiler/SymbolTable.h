@@ -5,8 +5,6 @@
 
 using string = std::string;
 
-const int TABLE_SIZE = 10000;
-
 enum SymbolCode
 {
 	Unknown = -1,
@@ -48,5 +46,4 @@ public:
 private:
 	static unsigned int GetHash(SymbolTableItem& item);
 	static SymbolTableItem** m_HashTable;
-	static void LogError(string message);
 };

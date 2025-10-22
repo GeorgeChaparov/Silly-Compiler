@@ -31,6 +31,12 @@
     <Filter Include="Source Files\Parser">
       <UniqueIdentifier>{c55db2e5-efb8-400a-af73-a58ea19e12ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Logger">
+      <UniqueIdentifier>{76e6593f-3c1b-4d32-be9e-188c598b1242}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils\Globals">
+      <UniqueIdentifier>{95ab103c-b334-453d-b6bd-f1d55d01d40e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lex.cpp">
@@ -51,6 +57,12 @@
     <ClCompile Include="Parser.cpp">
       <Filter>Source Files\Parser</Filter>
     </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Source Files\Logger</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source Files\Utils\Globals</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lex.h">
@@ -67,6 +79,12 @@
     </ClInclude>
     <ClInclude Include="Parser.h">
       <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Source Files\Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Source Files\Utils\Globals</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

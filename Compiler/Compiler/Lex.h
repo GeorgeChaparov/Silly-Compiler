@@ -9,9 +9,9 @@ class Lex
 {
 public:
 	static void Init(string document);
-	static int GetNextSymbol();
+	static int GetNextSymbol(bool includeNewLine, bool advance = true);
+	static int CheckNextSymbol();
 	static void Build();
-	static int GetCurrentLineCount();
 private:
 
 	enum CharType
@@ -19,10 +19,9 @@ private:
 		Unsure = 0, Digit, Letter, Separator, Operator, Punctuation, FlowControl, Compareson, Keyword, FileEnd, NewLine
 	};
 
-
-	static string m_Document;
 	static size_t m_CurrentPosition;
-	static int m_CurrentLine;
+	static unsigned int m_LineSymbolCount;
+	static unsigned int m_CurrentLine;
 
 	static CharType GetCharType(char ch);
 

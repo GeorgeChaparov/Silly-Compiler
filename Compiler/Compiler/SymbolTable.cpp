@@ -2,6 +2,7 @@
 #include <iostream>
 #include "Utils.h"
 #include <string>
+#include "Consts.h"
 
 using string = std::string;
 
@@ -9,7 +10,7 @@ SymbolTableItem** SymbolTable::m_HashTable = nullptr;
 
 void SymbolTable::Init()
 {
-	m_HashTable = new SymbolTableItem * [TABLE_SIZE]();
+	m_HashTable = new SymbolTableItem * [SYMBOL_TABLE_SIZE]();
 }
 
 size_t SymbolTable::AddItem(SymbolTableItem& item)
@@ -20,7 +21,7 @@ size_t SymbolTable::AddItem(SymbolTableItem& item)
 	{
 		while (m_HashTable[position] != nullptr)
 		{
-			position = (position + 1) % TABLE_SIZE;
+			position = (position + 1) % SYMBOL_TABLE_SIZE;
 		}
 
 		m_HashTable[position] = &item;
@@ -58,7 +59,7 @@ unsigned int SymbolTable::GetHash(SymbolTableItem& item) {
 		position += (i + 1) * ascii;
 	}
 
-	return position % TABLE_SIZE;
+	return position % SYMBOL_TABLE_SIZE;
 }
 
 bool SymbolTable::Has(SymbolTableItem& item, size_t& position)
@@ -72,7 +73,7 @@ bool SymbolTable::Has(SymbolTableItem& item, size_t& position)
 			position = pos;
 			return true;
 		}
-		pos = (pos + 1) % TABLE_SIZE;
+		pos = (pos + 1) % SYMBOL_TABLE_SIZE;
 
 		if (pos == start) break;
 	}
@@ -89,14 +90,9 @@ size_t SymbolTable::GetPosition(SymbolTableItem& item)
 	return position;
 }
 
-void SymbolTable::LogError(string message)
-{
-	std::cout << message;
-}
-
 void SymbolTable::Log()
 {
-	for (size_t i = 0; i < TABLE_SIZE; i++)
+	for (size_t i = 0; i < SYMBOL_TABLE_SIZE; i++)
 	{
 		SymbolTableItem* item = m_HashTable[i];
 

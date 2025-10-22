@@ -3,15 +3,17 @@
 #include "Utils.h"
 #include "SymbolTable.h"
 #include "GrammarTrie.h"
+#include "Logger.h"
+#include "Globals.h"
 
-string Lex::m_Document = "";
-size_t Lex::m_CurrentPosition = 0;
-int Lex::m_CurrentLine = 1;
+size_t Lex::m_CurrentPosition = g_CurrentPosition;
+unsigned int Lex::m_LineSymbolCount = g_LineSymbolCount;
+unsigned int Lex::m_CurrentLine = g_CurrentLine;
 
 void Lex::Init(string _document)
 {
-	m_Document = _document;
-	m_CurrentPosition = 0;
+	g_Document = _document;
+	g_DocumentLength = _document.length();
 
 	// Building the Trie.
 	GrammarTrie::Insert("::::", SymbolCode::Operator);	//	+
@@ -37,27 +39,28 @@ void Lex::Init(string _document)
 
 void Lex::Build()
 {
-	try
-	{
-		while (GetNextSymbol() != -1);
-	}
-	catch (const std::exception&)
-	{
-		return;
-	}
-	
+	while (GetNextSymbol(false) != -1);
 }
 
-int Lex::GetNextSymbol()
+int Lex::CheckNextSymbol()
+{
+	 return GetNextSymbol(false, false);
+}
+
+int Lex::GetNextSymbol(bool includeNewLine, bool advance)
 {
 	try
 	{
-		string buff = "";
-		size_t tableIndex = -2;
+		int defaultTableIndex = SYMBOL_TABLE_SIZE + 2;
+		size_t tableIndex = defaultTableIndex;
 
-		while (tableIndex == -2)
+		m_CurrentPosition = g_CurrentPosition;
+		m_LineSymbolCount = g_LineSymbolCount;
+		m_CurrentLine = g_CurrentLine;
+
+		while (tableIndex == defaultTableIndex)
 		{
-			char ch = m_Document[m_CurrentPosition];
+			char ch = g_Document[m_CurrentPosition];
 			switch (GetCharType(ch))
 			{
 			case Separator:
@@ -65,7 +68,12 @@ int Lex::GetNextSymbol()
 
 			case NewLine:
 				++m_CurrentLine;
-				tableIndex = SymbolTable::AddItem(ch, SymbolCode::Keyword);
+				m_LineSymbolCount = 1;
+
+				if (includeNewLine)
+				{
+					tableIndex = SymbolTable::AddItem(ch, SymbolCode::Keyword);
+				}
 				break;
 
 			case Digit:
@@ -81,11 +89,19 @@ int Lex::GetNextSymbol()
 				break;
 
 			case Keyword:
-				tableIndex = SymbolTable::AddItem(string() + ch + m_Document[++m_CurrentPosition], SymbolCode::Keyword);
+				if (m_CurrentPosition != g_DocumentLength)
+				{
+					tableIndex = SymbolTable::AddItem(string() + ch + g_Document[++m_CurrentPosition], SymbolCode::Keyword);
+				}
+				else
+				{
+					tableIndex = SymbolTable::AddItem(string() + ch, SymbolCode::Keyword);
+				}
+				
 				break;
 
 			case FileEnd:
-				tableIndex = -1;
+				tableIndex = defaultTableIndex - 1;
 				break;
 
 			case Unsure:
@@ -95,16 +111,29 @@ int Lex::GetNextSymbol()
 				break;
 			}
 
-			++m_CurrentPosition;
+			++m_LineSymbolCount;
+
+			if (m_CurrentPosition != g_DocumentLength)
+			{
+				++m_CurrentPosition;
+			}
+		}
+
+		if (advance)
+		{
+			g_CurrentPosition = m_CurrentPosition;
+			g_LineSymbolCount = m_LineSymbolCount;
+			g_CurrentLine = m_CurrentLine;
 		}
 
 		return tableIndex;
 	}
 	catch (const std::exception& error)
 	{
-		std::cout << error.what() << std::endl;
-		throw error;
+		Logger::Log(error.what(), ErrorType::Lexical, false);
 	}
+
+	return -1;
 }
 
 Lex::CharType Lex::GetCharType(char ch)
@@ -174,7 +203,7 @@ size_t Lex::FindIntegerChar(char ch)
 	{
 		buff.push_back(ch);
 
-		ch = m_Document[++index];
+		ch = g_Document[++index];
 	} while (IsDigit(ch));
 
 
@@ -197,7 +226,7 @@ size_t Lex::AddUnknownToken(char ch)
 	bool includeDashInSearch = true;
 	while (i < 4)
 	{
-		char nextCh = m_Document[++index];
+		char nextCh = g_Document[++index];
 		if (!IsSpecialPunctuationSymbol(nextCh, includeDashInSearch))
 		{
 			break;
@@ -222,13 +251,13 @@ size_t Lex::AddUnknownToken(char ch)
 	}
 	catch (const std::exception& error)
 	{
-		throw std::runtime_error(string("Unknown token: ") + buff + m_Document.substr(m_CurrentPosition + 1, m_CurrentPosition + 1 + i));
+		throw std::runtime_error(string("Unknown token: ") + buff + g_Document.substr(m_CurrentPosition + 1, m_CurrentPosition + 1 + i));
 	}
 }
 
 void Lex::GetNextLine()
 {
-	while (m_Document[m_CurrentPosition] != '\n')
+	while (g_Document[m_CurrentPosition] != '\n')
 	{
 		++m_CurrentPosition;
 	}
@@ -237,11 +266,11 @@ void Lex::GetNextLine()
 int Lex::GetEndWordPosition()
 {
 	int pos = m_CurrentPosition + 1;
-	char ch = m_Document[pos];
+	char ch = g_Document[pos];
 
 	while (!IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH) && ch != '\0')
 	{
-		ch = m_Document[++pos];
+		ch = g_Document[++pos];
 	}
 
 	return pos;
@@ -274,9 +303,4 @@ bool Lex::IsSpecialPunctuationSymbol(char ch, bool includeDash)
 	}
 
 	return isSpecial;
-}
-
-int Lex::GetCurrentLineCount()
-{
-	return m_CurrentLine;
 }

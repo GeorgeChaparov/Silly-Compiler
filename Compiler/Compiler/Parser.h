@@ -11,10 +11,10 @@ public:
 	static void Pars();
 	
 private:
-	static SymbolTableItem* m_Token;
 	static int m_ExprLevel;
 
-	static SymbolTableItem* GetNextToken();
+	static SymbolTableItem* GetNextToken(bool includeNewLine);
+	static SymbolTableItem* CheckNextToken();
 
 	static void Start();
 	static void Block();

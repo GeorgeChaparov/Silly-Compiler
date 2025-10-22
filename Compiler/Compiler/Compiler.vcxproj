@@ -130,14 +130,18 @@
   <ItemGroup>
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="Consts.h" />
+    <ClCompile Include="Globals.cpp" />
     <ClCompile Include="GrammarTrie.cpp" />
     <ClCompile Include="Lex.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="GrammarTrie.h" />
     <ClInclude Include="Lex.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Utils.h" />

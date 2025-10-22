@@ -1,36 +1,75 @@
 #include <exception>
 #include <iostream>
 #include "Parser.h"
+#include "Logger.h"
+#include "Globals.h"
+#include "Consts.h"
 
-SymbolTableItem* Parser::m_Token = new SymbolTableItem{ "", SymbolCode::Unknown};
 int Parser::m_ExprLevel = 0;
 
-SymbolTableItem* Parser::GetNextToken()
+SymbolTableItem* Parser::GetNextToken(bool includeNewLine = false)
 {
 	try
 	{
-		size_t index = Lex::GetNextSymbol();
+		size_t index = Lex::GetNextSymbol(includeNewLine);
 		
-		if (index < 0)
+		if (index == SYMBOL_TABLE_SIZE + 2)
 		{
-			throw std::runtime_error("Unexpected error");
+			throw std::logic_error("Unexpected error");
+		}
+		else if (index == SYMBOL_TABLE_SIZE + 1)
+		{
+			return new SymbolTableItem{ "12422233456568678 34564365234 87923323 5825685673 345436 MyRandomString ThatWill Never BeTHE SAme as Any StrInG ThAT theendUser Will Ever Write!@!@#$!@)#@%*@()9234", SymbolCode::Unknown };
 		}
 
 		return SymbolTable::GetElementAt(index);
 	}
 	catch (const std::exception& error)
 	{
-		std::cout << error.what() << std::endl;
+		Logger::Log(error.what(), ErrorType::Semantic, false);
+	}
+}
+
+SymbolTableItem* Parser::CheckNextToken()
+{
+	try
+	{
+		size_t index = Lex::CheckNextSymbol();
+
+		if (index == SYMBOL_TABLE_SIZE + 2)
+		{
+			throw std::logic_error("Unexpected error");
+		}
+		else if (index == SYMBOL_TABLE_SIZE + 1)
+		{
+			return new SymbolTableItem{ "MyRandomString ThatWill Never BeTHE SAme as Any StrInG ThAT theendUser Will Ever Write!@!@#$!@)#@%*@()9234", SymbolCode::Unknown };
+		}
+
+		return SymbolTable::GetElementAt(index);
+	}
+	catch (const std::exception& error)
+	{
+		Logger::Log(error.what(), ErrorType::Semantic, false);
 	}
 }
 
 void Parser::Pars()
 {
-	Start();
+	try
+	{
+		Start();
+
+		std::cout << "Parser completed" << std::endl;
+	}
+	catch (const std::exception& error)
+	{
+		Logger::Log(error.what(), ErrorType::Semantic);
+	}
 }
 
 void Parser::Start()
 {
+	g_CurrentToken = GetNextToken();
 	Block();
 }
 
@@ -43,141 +82,198 @@ void Parser::Stms()
 {
 	Stm();
 
-	while(m_Token->symbol == "\n")
+
+	SymbolTableItem* nextToken = CheckNextToken();
+	if(nextToken->symbol != ")" && g_CurrentToken->symbol == ")")
 	{
-		m_Token = GetNextToken();
-		Stms();
+		if (nextToken->symbol != ";;" && nextToken->symbol != ";;-")
+		{
+			g_CurrentToken = GetNextToken(true);
+			while (g_CurrentToken->symbol == "\n")
+			{
+				g_CurrentToken = GetNextToken();
+				Stms();
+			}
+		}
 	}
+	else if (nextToken->symbol != ")" && g_CurrentToken->symbol != ")")
+	{
+		g_CurrentToken = GetNextToken(true);
+		while (g_CurrentToken->symbol == "\n")
+		{
+			g_CurrentToken = GetNextToken();
+			Stms();
+		}
+	}
+	
 }
 
 void Parser::Stm()
 {
 	// Ident
-	if (m_Token->code == SymbolCode::Identifier)
+	if (g_CurrentToken->code == SymbolCode::Identifier)
 	{
 		//Ident ::
-		m_Token = GetNextToken();
-		if (m_Token->symbol != "::")
+		g_CurrentToken = GetNextToken();
+		if (g_CurrentToken->symbol != "::")
 		{
 			/*		ERROR		*/
+			throw std::runtime_error("Expected ::");
 		}
 
-		m_Token = GetNextToken();
+		g_CurrentToken = GetNextToken();
 
-		// Ident :: -:
-		if (m_Token->symbol == "-:")
+		// Ident :: expr
+		if (g_CurrentToken->symbol != "-:")
 		{
-			m_Token = GetNextToken();
+			Expr();
 		}
-		// if	-> Ident :: -: expr
-		// else -> Ident :: expr
-
-		Expr();
+		// else -> Ident :: -:
 	}
-	// -: | :-
-	else if (m_Token->symbol == "-:" || m_Token->symbol == ":-")
-	{
-		m_Token = GetNextToken();
-
-		//  -: expr | :- expr
-		Expr();
-	}
-	else if (m_Token->symbol == "-;" || m_Token->symbol == ";-")
+	// -:
+	else if (g_CurrentToken->symbol == "-:")
 	{
 		// This is valid.
 	}
-	else if (m_Token->symbol == ":")
+	// :-
+	else if (g_CurrentToken->symbol == ":-")
 	{
-		m_Token = GetNextToken();
+		g_CurrentToken = GetNextToken();
 
-		if (m_Token->symbol != "(")
+		// :- expr
+		Expr();
+	}
+	else if (g_CurrentToken->symbol == "-;" || g_CurrentToken->symbol == ";-")
+	{
+		// This is valid.
+	}
+	else if (g_CurrentToken->symbol == ":")
+	{
+		g_CurrentToken = GetNextToken();
+
+		if (g_CurrentToken->symbol != "(")
 		{
 			/*		ERROR		*/
+			throw std::runtime_error("Expected (");
 		}
 
-		m_Token = GetNextToken();
+		g_CurrentToken = GetNextToken();
 		Expr();
 
-		m_Token = GetNextToken();
-		if (m_Token->symbol != ")")
+		if (g_CurrentToken->symbol != ")")
 		{
 			/*		ERROR		*/
+			throw std::runtime_error("Expected )");
 		}
 
-		m_Token = GetNextToken();
-		if (m_Token->symbol != "(")
+		g_CurrentToken = GetNextToken();
+		if (g_CurrentToken->symbol != "(")
 		{
 			/*		ERROR		*/
+			throw std::runtime_error("Expected (");
 		}
 
 		++m_ExprLevel;
-		m_Token = GetNextToken();
-		Block();
 
-		m_Token = GetNextToken();
-		if (m_Token->symbol != ")")
+		if (CheckNextToken()->symbol != ")")
+		{
+			g_CurrentToken = GetNextToken();
+			Block();
+		}
+
+		g_CurrentToken = GetNextToken();
+		if (g_CurrentToken->symbol != ")")
 		{
 			/*		ERROR		*/
+			throw std::runtime_error("Expected )");
 		}
 
 		--m_ExprLevel;
 
 		// Its an "While", we do not need to do anything more. Else it will be an "If"
-		if (m_ExprLevel % 2 != 0)
+		if (m_ExprLevel % 2 == 0 )
 		{
-			return;
+			if (CheckNextToken()->symbol == ";;")
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("This is an 'While' not an 'if'!");
+			}
+			else 
+			{
+				return;
+			}
 		}
 
-		m_Token = GetNextToken();
-		while (m_Token->symbol == ";;")
+		g_CurrentToken = GetNextToken();
+		while (g_CurrentToken->symbol == ";;")
 		{
-			m_Token = GetNextToken();
+			g_CurrentToken = GetNextToken();
 			ElseIf();	
+			g_CurrentToken = GetNextToken();
 		}
 
-		m_Token = GetNextToken();
-		if (m_Token->symbol == ";;-")
+		if (g_CurrentToken->symbol == ";;-")
 		{
-			m_Token = GetNextToken();
+			g_CurrentToken = GetNextToken();
+			if (g_CurrentToken->symbol != "(")
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Expected (");
+			}
+
+			++m_ExprLevel;
+			g_CurrentToken = GetNextToken();
 			Block();
+
+			g_CurrentToken = GetNextToken();
+			if (g_CurrentToken->symbol != ")")
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Expected )");
+			}
+
+			--m_ExprLevel;
 		}
 	}
 	else
 	{
 		/*		ERROR		*/		
+		throw std::runtime_error("Expected Identifier or -: or :- or -; or ;- or :");
 	}
 }
 
 void Parser::ElseIf()
 {
-	if (m_Token->symbol != "(")
+	if (g_CurrentToken->symbol != "(")
 	{
 		/*		ERROR		*/
+		throw std::runtime_error("Expected (");
 	}
 
-	m_Token = GetNextToken();
+	g_CurrentToken = GetNextToken();
 	Expr();
 
-	m_Token = GetNextToken();
-	if (m_Token->symbol != ")")
+	if (g_CurrentToken->symbol != ")")
 	{
 		/*		ERROR		*/
+		throw std::runtime_error("Expected )");
 	}
 
-	m_Token = GetNextToken();
-	if (m_Token->symbol != "(")
+	g_CurrentToken = GetNextToken();
+	if (g_CurrentToken->symbol != "(")
 	{
 		/*		ERROR		*/
+		throw std::runtime_error("Expected (");
 	}
 
 	++m_ExprLevel;
-	m_Token = GetNextToken();
+	g_CurrentToken = GetNextToken();
 	Block();
 
-	m_Token = GetNextToken();
-	if (m_Token->symbol != ")")
+	if (g_CurrentToken->symbol != ")")
 	{
 		/*		ERROR		*/
+		throw std::runtime_error("Expected )");
 	}
 
 	--m_ExprLevel;
@@ -192,10 +288,9 @@ void Parser::Equality()
 {
 	Comparison();
 
-	m_Token = GetNextToken();
-	if (m_Token->symbol == ":::")
+	if (g_CurrentToken->symbol == ":::")
 	{
-		m_Token = GetNextToken();
+		g_CurrentToken = GetNextToken();
 		Comparison();
 	}
 }
@@ -204,10 +299,9 @@ void Parser::Comparison()
 {
 	Term();
 
-	m_Token = GetNextToken();
-	if (m_Token->symbol == ":;")
+	if (g_CurrentToken->symbol == ":;")
 	{
-		m_Token = GetNextToken();
+		g_CurrentToken = GetNextToken();
 		Comparison();
 	}
 }
@@ -215,14 +309,50 @@ void Parser::Comparison()
 void Parser::Term()
 {
 	Factor();
+
+	while (g_CurrentToken->symbol == ";;;;" || g_CurrentToken->symbol == "::::")
+	{
+		g_CurrentToken = GetNextToken();
+		Term();
+	}
 }
 
 void Parser::Factor()
 {
 	Primary();
+
+	g_CurrentToken = GetNextToken();
+	while (g_CurrentToken->symbol == "::;;" || g_CurrentToken->symbol == ";;::")
+	{
+		g_CurrentToken = GetNextToken();
+		Factor();
+	}
 }
 
 void Parser::Primary()
 {
+	if (g_CurrentToken->code == SymbolCode::Identifier)
+	{
 
+	}
+	else if (g_CurrentToken->code == SymbolCode::IntegerLiteral)
+	{
+
+	}
+	else if (g_CurrentToken->symbol == "(")
+	{
+		g_CurrentToken = GetNextToken();
+		Expr();
+		
+		if (g_CurrentToken->symbol != ")")
+		{
+			/*		ERROR		*/
+			throw std::runtime_error("Expected )");
+		}
+	}
+	else
+	{
+		/*		ERROR		*/
+		throw std::runtime_error("Expected Identifier or Constant Literal or (");
+	}
 }
