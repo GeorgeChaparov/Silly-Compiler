@@ -7,19 +7,22 @@
 
 int Parser::m_ExprLevel = 0;
 
-SymbolTableItem* Parser::GetNextToken(bool includeNewLine = false)
+// This string is used to create an SymbolTableItem object with purpose to not match any string that the user may write. This object is created when we have hit the end of the file.
+static const string M_RANDOM_STRING = "12422233456568678 34564365234 87923323 5825685673 345436 MyRandomString ThatWill Never BeTHE SAme as Any StrInG ThAT theendUser Will Ever Write!@!@#$!@)#@%*@()9234";
+
+SymbolTableItem* Parser::GetNextToken(bool _includeNewLine = false)
 {
 	try
 	{
-		size_t index = Lex::GetNextSymbol(includeNewLine);
+		size_t index = Lex::GetNextSymbol(_includeNewLine);
 		
-		if (index == SYMBOL_TABLE_SIZE + 2)
+		if (index == UNEXPECTED_LEXICAL_ERROR_CODE)
 		{
 			throw std::logic_error("Unexpected error");
 		}
-		else if (index == SYMBOL_TABLE_SIZE + 1)
+		else if (index == END_OF_FILE_CODE)
 		{
-			return new SymbolTableItem{ "12422233456568678 34564365234 87923323 5825685673 345436 MyRandomString ThatWill Never BeTHE SAme as Any StrInG ThAT theendUser Will Ever Write!@!@#$!@)#@%*@()9234", SymbolCode::Unknown };
+			return new SymbolTableItem{ M_RANDOM_STRING, SymbolCode::Unknown };
 		}
 
 		return SymbolTable::GetElementAt(index);
@@ -36,13 +39,13 @@ SymbolTableItem* Parser::CheckNextToken()
 	{
 		size_t index = Lex::CheckNextSymbol();
 
-		if (index == SYMBOL_TABLE_SIZE + 2)
+		if (index == UNEXPECTED_LEXICAL_ERROR_CODE)
 		{
 			throw std::logic_error("Unexpected error");
 		}
-		else if (index == SYMBOL_TABLE_SIZE + 1)
+		else if (index == END_OF_FILE_CODE)
 		{
-			return new SymbolTableItem{ "MyRandomString ThatWill Never BeTHE SAme as Any StrInG ThAT theendUser Will Ever Write!@!@#$!@)#@%*@()9234", SymbolCode::Unknown };
+			return new SymbolTableItem{ M_RANDOM_STRING, SymbolCode::Unknown };
 		}
 
 		return SymbolTable::GetElementAt(index);

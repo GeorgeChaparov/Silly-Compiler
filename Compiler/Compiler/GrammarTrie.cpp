@@ -2,11 +2,11 @@
 
 TrieNode* GrammarTrie::m_Root = new TrieNode();
 
-void GrammarTrie::Insert(string token, SymbolCode type) {
+void GrammarTrie::Insert(string _token, SymbolCode _type) {
 
 	TrieNode* node = m_Root;
 
-	for (char c : token) {
+	for (char c : _token) {
 		int index = GetIndex(c);
 		if (!node->children[index])
 		{
@@ -16,19 +16,19 @@ void GrammarTrie::Insert(string token, SymbolCode type) {
 		node = node->children[index];
 	}
 	node->isEnd = true;
-	node->tokenType = type;
-	node->tokenValue = token;
+	node->tokenType = _type;
+	node->tokenValue = _token;
 }
 
-TrieNode* GrammarTrie::Find(string token)
+TrieNode* GrammarTrie::Find(string _token)
 {
 	TrieNode* node = m_Root;
 
-	for (char c : token) {
-		int index = GetIndex(c);
+	for (char ch : _token) {
+		int index = GetIndex(ch);
 		if (!node->children[index])
 		{
-			throw std::runtime_error("Unknown symbol: " + c);
+			throw std::runtime_error("Unknown symbol: " + ch);
 		}
 
 		node = node->children[index];
@@ -42,11 +42,19 @@ TrieNode* GrammarTrie::Find(string token)
 	return node;
 }
 
-int GrammarTrie::GetIndex(char c) {
-	switch (c) {
-	case ':': return 0;
-	case ';': return 1;
-	case '-': return 2;
-	default: return -1;
+int GrammarTrie::GetIndex(char _ch) {
+	switch (_ch) 
+	{
+	case ':': 
+		return 0;
+
+	case ';': 
+		return 1;
+
+	case '-': 
+		return 2;
+
+	default: 
+		return -1;
 	}
 }

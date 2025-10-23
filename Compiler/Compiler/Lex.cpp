@@ -39,7 +39,7 @@ void Lex::Init(string _document)
 
 void Lex::Build()
 {
-	while (GetNextSymbol(false) != -1);
+	while (GetNextSymbol(false) != END_OF_FILE_CODE);
 }
 
 int Lex::CheckNextSymbol()
@@ -47,18 +47,17 @@ int Lex::CheckNextSymbol()
 	 return GetNextSymbol(false, false);
 }
 
-int Lex::GetNextSymbol(bool includeNewLine, bool advance)
+int Lex::GetNextSymbol(bool _includeNewLine, bool _advance)
 {
 	try
 	{
-		int defaultTableIndex = SYMBOL_TABLE_SIZE + 2;
-		size_t tableIndex = defaultTableIndex;
+		size_t tableIndex = UNEXPECTED_LEXICAL_ERROR_CODE;
 
 		m_CurrentPosition = g_CurrentPosition;
 		m_LineSymbolCount = g_LineSymbolCount;
 		m_CurrentLine = g_CurrentLine;
 
-		while (tableIndex == defaultTableIndex)
+		while (tableIndex == UNEXPECTED_LEXICAL_ERROR_CODE)
 		{
 			char ch = g_Document[m_CurrentPosition];
 			switch (GetCharType(ch))
@@ -70,7 +69,7 @@ int Lex::GetNextSymbol(bool includeNewLine, bool advance)
 				++m_CurrentLine;
 				m_LineSymbolCount = 1;
 
-				if (includeNewLine)
+				if (_includeNewLine)
 				{
 					tableIndex = SymbolTable::AddItem(ch, SymbolCode::Keyword);
 				}
@@ -101,7 +100,7 @@ int Lex::GetNextSymbol(bool includeNewLine, bool advance)
 				break;
 
 			case FileEnd:
-				tableIndex = defaultTableIndex - 1;
+				tableIndex = END_OF_FILE_CODE;
 				break;
 
 			case Unsure:
@@ -119,7 +118,7 @@ int Lex::GetNextSymbol(bool includeNewLine, bool advance)
 			}
 		}
 
-		if (advance)
+		if (_advance)
 		{
 			g_CurrentPosition = m_CurrentPosition;
 			g_LineSymbolCount = m_LineSymbolCount;
@@ -133,30 +132,30 @@ int Lex::GetNextSymbol(bool includeNewLine, bool advance)
 		Logger::Log(error.what(), ErrorType::Lexical, false);
 	}
 
-	return -1;
+	return UNEXPECTED_LEXICAL_ERROR_CODE;
 }
 
-Lex::CharType Lex::GetCharType(char ch)
+Lex::CharType Lex::GetCharType(char _ch)
 {
-	if (IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH))
+	if (IsInSet(_ch, SEPARATORS, SEPARATORS_SET_LENGTH))
 	{
 		return CharType::Separator;
 	}
 
-	if (ch == '\n')
+	if (_ch == '\n')
 	{
 		return CharType::NewLine;
 	}
 
-	if (ch == '\0')
+	if (_ch == '\0')
 	{
 		return CharType::FileEnd;
 	}
 
-	unsigned int ascii = static_cast<int>(ch);
+	unsigned int ascii = static_cast<int>(_ch);
 
-	if ((ascii >= UPPER_CASE_LETTERS_MIN_CODE && ascii <= UPPER_CASE_LETTERS_MAX_CODE) ||
-		(ascii >= LOWER_CASE_LETTERS_MIN_CODE && ascii <= LOWER_CASE_LETTERS_MAX_CODE))
+	if ((ascii >= UPPER_CASE_LETTERS_MIN_ASCII_CODE && ascii <= UPPER_CASE_LETTERS_MAX_ASCII_CODE) ||
+		(ascii >= LOWER_CASE_LETTERS_MIN_ASCII_CODE && ascii <= LOWER_CASE_LETTERS_MAX_ASCII_CODE))
 	{
 		return CharType::Letter;
 	}
@@ -164,29 +163,29 @@ Lex::CharType Lex::GetCharType(char ch)
 	{
 		return CharType::Digit;
 	}
-	else if (ch == '-')
+	else if (_ch == '-')
 	{
 		return CharType::Keyword;
 	}
-	else if (IsInSet(ch, PUNCTUATION, PUNCTUATION_SET_LENGTH))
+	else if (IsInSet(_ch, PUNCTUATION, PUNCTUATION_SET_LENGTH))
 	{
 		return CharType::Punctuation;
 	}
-	else if (IsSpecialPunctuationSymbol(ch))
+	else if (IsSpecialPunctuationSymbol(_ch))
 	{
 		return CharType::Unsure;
 	}
 
 	// Error: unknown character.
-	throw std::runtime_error(string("Unknown character: ") + ch);
+	throw std::runtime_error(string("Unknown character: ") + _ch);
 }
 
-bool Lex::IsInSet(char ch, auto set, size_t setLength)
+bool Lex::IsInSet(char _ch, auto _set, size_t _setLength)
 {
-	for (size_t i = 0; i < setLength; i++)
+	for (size_t i = 0; i < _setLength; i++)
 	{
-		char current = set[i];
-		if (ch == current)
+		char current = _set[i];
+		if (_ch == current)
 		{
 			return true;
 		}
@@ -195,16 +194,16 @@ bool Lex::IsInSet(char ch, auto set, size_t setLength)
 	return false;
 }
 
-size_t Lex::FindIntegerChar(char ch)
+size_t Lex::FindIntegerChar(char _ch)
 {
 	string buff = "";
 	size_t index = m_CurrentPosition;
 	do
 	{
-		buff.push_back(ch);
+		buff.push_back(_ch);
 
-		ch = g_Document[++index];
-	} while (IsDigit(ch));
+		_ch = g_Document[++index];
+	} while (IsDigit(_ch));
 
 
 	m_CurrentPosition = --index;
@@ -212,22 +211,18 @@ size_t Lex::FindIntegerChar(char ch)
 	return SymbolTable::AddItem(buff, SymbolCode::IntegerLiteral);
 }
 
-size_t Lex::AddUnknownToken(char ch)
+size_t Lex::AddUnknownToken(char _ch)
 {
 	string buff = "";
-
-	buff.push_back(ch);
-
+	buff.push_back(_ch);
 	
 	size_t index = m_CurrentPosition;
-
 	size_t i = 1;
 
-	bool includeDashInSearch = true;
 	while (i < 4)
 	{
 		char nextCh = g_Document[++index];
-		if (!IsSpecialPunctuationSymbol(nextCh, includeDashInSearch))
+		if (!IsSpecialPunctuationSymbol(nextCh, true))
 		{
 			break;
 		}
@@ -265,39 +260,39 @@ void Lex::GetNextLine()
 
 int Lex::GetEndWordPosition()
 {
-	int pos = m_CurrentPosition + 1;
-	char ch = g_Document[pos];
+	int nextPos = m_CurrentPosition + 1;
+	char ch = g_Document[nextPos];
 
 	while (!IsInSet(ch, SEPARATORS, SEPARATORS_SET_LENGTH) && ch != '\0')
 	{
-		ch = g_Document[++pos];
+		ch = g_Document[++nextPos];
 	}
 
-	return pos;
+	return nextPos;
 }
 
-bool Lex::IsDigit(unsigned int ascii)
+bool Lex::IsDigit(unsigned int _ascii)
 {
-	return ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE;
+	return _ascii >= DIGITS_MIN_ASCII_CODE && _ascii <= DIGITS_MAX_ASCII_CODE;
 }
 
-bool Lex::IsDigit(char ch)
+bool Lex::IsDigit(char _ch)
 {
-	unsigned int ascii = static_cast<int>(ch);
+	unsigned int ascii = static_cast<int>(_ch);
 
-	return ascii >= DIGITS_MIN_CODE && ascii <= DIGITS_MAX_CODE;
+	return ascii >= DIGITS_MIN_ASCII_CODE && ascii <= DIGITS_MAX_ASCII_CODE;
 }
 
-bool Lex::IsSpecialPunctuationSymbol(char ch, bool includeDash)
+bool Lex::IsSpecialPunctuationSymbol(char _ch, bool _includeDash)
 {
 	bool isSpecial = false;
 
-	if (ch == ';' || ch == ':')
+	if (_ch == ';' || _ch == ':')
 	{
 		isSpecial = true;
 	}
 
-	if (includeDash && ch == '-')
+	if (_includeDash && _ch == '-')
 	{
 		isSpecial = true;
 	}

@@ -13,40 +13,40 @@ void SymbolTable::Init()
 	m_HashTable = new SymbolTableItem * [SYMBOL_TABLE_SIZE]();
 }
 
-size_t SymbolTable::AddItem(SymbolTableItem& item)
+size_t SymbolTable::AddItem(SymbolTableItem& _item)
 {
 	size_t position = 0;
 
-	if (!Has(item, position))
+	if (!Has(_item, position))
 	{
 		while (m_HashTable[position] != nullptr)
 		{
 			position = (position + 1) % SYMBOL_TABLE_SIZE;
 		}
 
-		m_HashTable[position] = &item;
+		m_HashTable[position] = &_item;
 	}
 
 	return position;
 }
 
-size_t SymbolTable::AddItem(string name, SymbolCode code)
+size_t SymbolTable::AddItem(string _name, SymbolCode _code)
 {
-	SymbolTableItem* item = new SymbolTableItem{ name, code };
+	SymbolTableItem* item = new SymbolTableItem{ _name, _code };
 
 	return AddItem(*item);
 }
 
-size_t SymbolTable::AddItem(char name, SymbolCode code)
+size_t SymbolTable::AddItem(char _name, SymbolCode _code)
 {
-	SymbolTableItem* item = new SymbolTableItem{string() + name, code };
+	SymbolTableItem* item = new SymbolTableItem{string() + _name, _code };
 
 	return AddItem(*item);
 }
 
-unsigned int SymbolTable::GetHash(SymbolTableItem& item) {
+unsigned int SymbolTable::GetHash(SymbolTableItem& _item) {
 
-	string value = item.symbol;
+	string value = _item.symbol;
 
 	size_t position = 0;
 
@@ -62,15 +62,15 @@ unsigned int SymbolTable::GetHash(SymbolTableItem& item) {
 	return position % SYMBOL_TABLE_SIZE;
 }
 
-bool SymbolTable::Has(SymbolTableItem& item, size_t& position)
+bool SymbolTable::Has(SymbolTableItem& _item, size_t& _position)
 {
-	size_t pos = GetHash(item);
+	size_t pos = GetHash(_item);
 	size_t start = pos;
 
 	while (m_HashTable[pos] != nullptr) {
 
-		if (m_HashTable[pos]->symbol == item.symbol && m_HashTable[pos]->code == item.code) {
-			position = pos;
+		if (m_HashTable[pos]->symbol == _item.symbol && m_HashTable[pos]->code == _item.code) {
+			_position = pos;
 			return true;
 		}
 		pos = (pos + 1) % SYMBOL_TABLE_SIZE;
@@ -78,14 +78,14 @@ bool SymbolTable::Has(SymbolTableItem& item, size_t& position)
 		if (pos == start) break;
 	}
 
-	position = start;
+	_position = start;
 	return false;
 }
 
-size_t SymbolTable::GetPosition(SymbolTableItem& item)
+size_t SymbolTable::GetPosition(SymbolTableItem& _item)
 {
 	size_t position = 0;
-	Has(item, position);
+	Has(_item, position);
 
 	return position;
 }
@@ -103,7 +103,7 @@ void SymbolTable::Log()
 	}
 }
 
-SymbolTableItem* SymbolTable::GetElementAt(size_t index)
+SymbolTableItem* SymbolTable::GetElementAt(size_t _index)
 {
-	return m_HashTable[index];
+	return m_HashTable[_index];
 }

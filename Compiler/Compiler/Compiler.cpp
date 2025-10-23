@@ -8,6 +8,14 @@
 #include "Logger.h"
 #include "SymbolTable.h"
 
+
+// g_VariableName -> variable in Global.h
+// m_VariableName -> private member variable
+// M_VARIABLE_NAME -> member constant
+// VARIABLE_NAME -> constant in Consts.h
+// varableName -> scoped variable
+// _variableName -> function or method parameter
+
 using namespace std;
 int main() {
 
