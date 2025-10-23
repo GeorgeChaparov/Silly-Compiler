@@ -204,15 +204,27 @@ void Parser::Stm()
 			}
 		}
 
-		g_CurrentToken = GetNextToken();
-		while (g_CurrentToken->symbol == ";;")
+		SymbolTableItem* nextToken = CheckNextToken();
+
+		if (nextToken->symbol == ";;")
 		{
 			g_CurrentToken = GetNextToken();
-			ElseIf();	
+			do 
+			{
+				g_CurrentToken = GetNextToken();
+				ElseIf();
+				g_CurrentToken = GetNextToken();
+			}
+			while (g_CurrentToken->symbol == ";;");
+
+			nextToken = g_CurrentToken;
+		}
+		else if (nextToken->symbol == ";;-")
+		{
 			g_CurrentToken = GetNextToken();
 		}
 
-		if (g_CurrentToken->symbol == ";;-")
+		if (nextToken->symbol == ";;-")
 		{
 			g_CurrentToken = GetNextToken();
 			if (g_CurrentToken->symbol != "(")
