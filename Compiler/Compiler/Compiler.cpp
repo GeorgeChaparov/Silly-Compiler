@@ -35,6 +35,7 @@ int main() {
 		SymbolTable::Init();
 		Lex::Init(fileStream);
 		Parser::Pars();
+		
 
 		//Lex::Build();
 

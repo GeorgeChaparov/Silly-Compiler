@@ -1,9 +1,18 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "Lex.h"
 
 using string = std::string;
+
+struct Quad
+{
+	string operation;
+	size_t arg1;
+	size_t arg2;
+	size_t result;
+};
 
 class Parser
 {
@@ -12,20 +21,28 @@ public:
 	
 private:
 	static int m_ExprLevel;
+	static int m_CustomVarIndex;
+
+	static size_t m_TableIndex;
+	static std::vector<Quad*>* m_QuadTable;
 
 	static SymbolTableItem* GetNextToken(bool includeNewLine);
-	static SymbolTableItem* CheckNextToken();
+	static void ReturnWithOneToken();
+	static SymbolTableItem* CheckNextToken(bool includeNewLine = false);
+
+	static size_t GenCustomVar();
+	static void Log();
 
 	static void Start();
 	static void Block();
-	static void Stms();
-	static void Stm();
-	static void ElseIf();
-	static void Expr();
-	static void Equality();
-	static void Comparison();
-	static void Term();
-	static void Factor();
-	static void Primary();
+	static string Stms();
+	static string Stm();
+	static string ElseIf();
+	static size_t Expr();
+	static size_t Equality();
+	static size_t Comparison();
+	static size_t Term();
+	static size_t Factor();
+	static size_t Primary();
 };
 

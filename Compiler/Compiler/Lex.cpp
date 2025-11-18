@@ -42,9 +42,9 @@ void Lex::Build()
 	while (GetNextSymbol(false) != END_OF_FILE_CODE);
 }
 
-int Lex::CheckNextSymbol()
+int Lex::CheckNextSymbol(bool _includeNewLine)
 {
-	 return GetNextSymbol(false, false);
+	 return GetNextSymbol(_includeNewLine, false);
 }
 
 int Lex::GetNextSymbol(bool _includeNewLine, bool _advance)

@@ -13,6 +13,7 @@ enum SymbolCode
 	Operator,
 	Punctuation,
 	IntegerLiteral,
+	EndFile,
 };
 
 struct SymbolTableItem

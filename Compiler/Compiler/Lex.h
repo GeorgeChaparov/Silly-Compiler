@@ -10,7 +10,7 @@ class Lex
 public:
 	static void Init(string document);
 	static int GetNextSymbol(bool includeNewLine, bool advance = true);
-	static int CheckNextSymbol();
+	static int CheckNextSymbol(bool includeNewLine = false);
 	static void Build();
 private:
 
