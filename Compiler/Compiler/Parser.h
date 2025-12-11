@@ -37,7 +37,8 @@ private:
 	static void Block();
 	static string Stms();
 	static string Stm();
-	static string ElseIf();
+	static Quad* ElseIf();
+	static string Else();
 	static size_t Expr();
 	static size_t Equality();
 	static size_t Comparison();

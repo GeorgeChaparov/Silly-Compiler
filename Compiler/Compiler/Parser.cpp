@@ -25,17 +25,36 @@ void Parser::Log()
 {
 	std::cout << std::endl;
 	std::cout << "Quad table:" << std::endl;
+	int index = 0;
 
 	for (auto& quad : *m_QuadTable)
 	{
-		if (quad->arg2)
+		if (quad->operation == "JMP")
 		{
-			std::cout << SymbolTable::GetElementAt(quad->result)->symbol << " = " << SymbolTable::GetElementAt(quad->arg1)->symbol << " " << quad->operation << " " << SymbolTable::GetElementAt(quad->arg2)->symbol << std::endl;
+			std::cout << index << " -> " << quad->operation << " at " << quad->arg1 << std::endl;
+		}
+		else if (quad->operation == "BRZ")
+		{
+			std::cout << index << " -> " << quad->operation << " at " << quad->arg1 << " if " << SymbolTable::GetElementAt(quad->arg2)->symbol << std::endl;
+		}
+		else if (quad->arg2)
+		{
+			std::cout << index << " -> " << SymbolTable::GetElementAt(quad->result)->symbol << " = " << SymbolTable::GetElementAt(quad->arg1)->symbol << " " << quad->operation << " " << SymbolTable::GetElementAt(quad->arg2)->symbol << std::endl;
+		}
+		else if (quad->operation == "END")
+		{
+			std::cout << index << " -> " << quad->operation << std::endl;
+		}
+		else if (quad->operation == "IN" || quad->operation == "OUT")
+		{
+			std::cout << index << " -> " << quad->operation << " " << SymbolTable::GetElementAt(quad->result)->symbol << std::endl;
 		}
 		else
 		{
-			std::cout << SymbolTable::GetElementAt(quad->result)->symbol << " " << quad->operation << " " << SymbolTable::GetElementAt(quad->arg1)->symbol << std::endl;
+			std::cout << index << " -> " << SymbolTable::GetElementAt(quad->result)->symbol << " " << quad->operation << " " << SymbolTable::GetElementAt(quad->arg1)->symbol << std::endl;
 		}
+
+		++index;
 	}
 }
 
@@ -104,6 +123,10 @@ void Parser::Pars()
 	{
 		Start();
 
+		Quad* endQuad = new Quad();
+		endQuad->operation = "END";
+		m_QuadTable->push_back(endQuad);
+
 		std::cout << "Parser completed" << std::endl;
 
 		Log();
@@ -136,27 +159,12 @@ string Parser::Stms()
 		return "";
 	}
 
-	if(nextToken->symbol != ")" && g_CurrentToken->symbol == ")")
+	if (g_CurrentToken->symbol == ")" )
 	{
-		if (nextToken->symbol != ";;" && nextToken->symbol != ";;-")
-		{
-			g_CurrentToken = GetNextToken(true);
-			while (g_CurrentToken->symbol == "\n")
-			{
-				g_CurrentToken = GetNextToken();
-				Stms();
-			}
-		}
+		return "";
 	}
-	else if (nextToken->symbol != ")" && g_CurrentToken->symbol != ")")
-	{
-		g_CurrentToken = GetNextToken(true);
-		while (g_CurrentToken->symbol == "\n")
-		{
-			g_CurrentToken = GetNextToken();
-			Stms();
-		}
-	}
+
+	Stms();
 	
 	return "";
 }
@@ -166,7 +174,9 @@ string Parser::Stm()
 	// Ident
 	if (g_CurrentToken->code == SymbolCode::Identifier)
 	{
-		size_t arg, result = m_TableIndex;
+		size_t arg1, result = m_TableIndex;
+
+		
 		//Ident ::
 		g_CurrentToken = GetNextToken();
 		if (g_CurrentToken->symbol != "::")
@@ -175,20 +185,25 @@ string Parser::Stm()
 			throw std::runtime_error("Expected ::");
 		}
 
-		g_CurrentToken = GetNextToken();
+		Quad* quad = new Quad();
 
+		g_CurrentToken = GetNextToken();
 		// Ident :: expr
 		if (g_CurrentToken->symbol != "-:")
 		{
-			arg = Expr();
+			arg1 = Expr();
 
-			Quad* quad = new Quad();
 			quad->operation = "::";
-			quad->arg1 = arg;
-			quad->result = result;
-			m_QuadTable->push_back(quad);
+			quad->arg1 = arg1;
 		}
-		// else -> Ident :: -:
+		// Ident :: -:
+		else
+		{
+			quad->operation = "IN";
+		}
+
+		quad->result = result;
+		m_QuadTable->push_back(quad);
 	}
 	// -:
 	else if (g_CurrentToken->symbol == "-:")
@@ -198,17 +213,25 @@ string Parser::Stm()
 	// :-
 	else if (g_CurrentToken->symbol == ":-")
 	{
+		Quad* quad = new Quad();
+
 		g_CurrentToken = GetNextToken();
 
 		// :- expr
-		Expr();
+		quad->result = Expr();
+		quad->operation = "OUT";
 	}
 	else if (g_CurrentToken->symbol == "-;" || g_CurrentToken->symbol == ";-")
 	{
 		// This is valid.
+		Quad* quad = new Quad();
 	}
 	else if (g_CurrentToken->symbol == ":")
 	{
+		size_t condStartPos;
+		std::vector<Quad*>* elses = new std::vector<Quad*>();
+		Quad* jmpDownQuad = new Quad();
+
 		g_CurrentToken = GetNextToken();
 
 		if (g_CurrentToken->symbol != "(")
@@ -217,8 +240,13 @@ string Parser::Stm()
 			throw std::runtime_error("Expected (");
 		}
 
+		condStartPos = m_QuadTable->size();
+
 		g_CurrentToken = GetNextToken();
-		Expr();
+
+		jmpDownQuad->operation = "BRZ";
+		jmpDownQuad->arg2 = Expr();
+		m_QuadTable->push_back(jmpDownQuad);
 
 		if (g_CurrentToken->symbol != ")")
 		{
@@ -235,13 +263,12 @@ string Parser::Stm()
 
 		++m_ExprLevel;
 
-		if (CheckNextToken()->symbol != ")")
+		g_CurrentToken = GetNextToken();
+		if (g_CurrentToken->symbol != ")")
 		{
-			g_CurrentToken = GetNextToken();
 			Block();
 		}
-
-		g_CurrentToken = GetNextToken();
+		
 		if (g_CurrentToken->symbol != ")")
 		{
 			/*		ERROR		*/
@@ -253,58 +280,82 @@ string Parser::Stm()
 		// Its an "While", we do not need to do anything more. Else it will be an "If"
 		if (m_ExprLevel % 2 == 0 )
 		{
-			if (CheckNextToken()->symbol == ";;")
+			g_CurrentToken = GetNextToken();
+
+			if (g_CurrentToken->symbol == ";;")
 			{
 				/*		ERROR		*/
 				throw std::runtime_error("This is an 'While' not an 'if'!");
 			}
-			else 
-			{
-				return "";
-			}
+			
+			Quad* jmpUpQuad = new Quad();
+			jmpUpQuad->operation = "JMP";
+			jmpUpQuad->arg1 = condStartPos;
+			m_QuadTable->push_back(jmpUpQuad);
+
+			jmpDownQuad->arg1 = m_QuadTable->size();
+
+			return "";
 		}
+
+		Quad* jmpAfterIfQuad = new Quad();
+		jmpAfterIfQuad->operation = "JMP";
+		
 
 		SymbolTableItem* nextToken = CheckNextToken();
 
-		if (nextToken->symbol == ";;")
+		g_CurrentToken = GetNextToken();
+		if (g_CurrentToken->symbol == ";;")
 		{
-			g_CurrentToken = GetNextToken();
+			m_QuadTable->push_back(jmpAfterIfQuad);
+			
+			jmpDownQuad->arg1 = m_QuadTable->size();
 			do 
 			{
 				g_CurrentToken = GetNextToken();
-				ElseIf();
+				Quad* elseQuad = ElseIf();
+
+				Quad* jmpAfterElseQuad = new Quad();
+				jmpAfterElseQuad->operation = "JMP";
+				elses->push_back(jmpAfterElseQuad);
+				m_QuadTable->push_back(jmpAfterElseQuad);
+
+				elseQuad->arg1 = m_QuadTable->size();
 				g_CurrentToken = GetNextToken();
 			}
 			while (g_CurrentToken->symbol == ";;");
 
-			nextToken = g_CurrentToken;
-		}
-		else if (nextToken->symbol == ";;-")
-		{
-			g_CurrentToken = GetNextToken();
-		}
-
-		if (nextToken->symbol == ";;-")
-		{
-			g_CurrentToken = GetNextToken();
-			if (g_CurrentToken->symbol != "(")
+			if (g_CurrentToken->symbol == ";;-")
 			{
-				/*		ERROR		*/
-				throw std::runtime_error("Expected (");
+				g_CurrentToken = GetNextToken();
+				Else();
+				g_CurrentToken = GetNextToken();
 			}
 
-			++m_ExprLevel;
-			g_CurrentToken = GetNextToken();
-			Block();
-
-			g_CurrentToken = GetNextToken();
-			if (g_CurrentToken->symbol != ")")
+			for (auto& _else : *elses)
 			{
-				/*		ERROR		*/
-				throw std::runtime_error("Expected )");
+				_else->arg1 = m_QuadTable->size();
 			}
 
-			--m_ExprLevel;
+			jmpAfterIfQuad->arg1 = m_QuadTable->size();
+
+		}
+		else if (g_CurrentToken->symbol == ";;-")
+		{
+			m_QuadTable->push_back(jmpAfterIfQuad);
+
+			g_CurrentToken = GetNextToken();
+			jmpDownQuad->arg1 = m_QuadTable->size();
+
+			Else();
+
+			g_CurrentToken = GetNextToken();
+			
+			jmpAfterIfQuad->arg1 = m_QuadTable->size();
+		}
+		else
+		{
+			jmpDownQuad->arg1 = m_QuadTable->size();
 		}
 	}
 	else
@@ -316,8 +367,11 @@ string Parser::Stm()
 	return "";
 }
 
-string Parser::ElseIf()
+Quad* Parser::ElseIf()
 {
+	size_t endPos, condResult;
+	Quad* jmpDownQuad = new Quad();
+
 	if (g_CurrentToken->symbol != "(")
 	{
 		/*		ERROR		*/
@@ -325,7 +379,11 @@ string Parser::ElseIf()
 	}
 
 	g_CurrentToken = GetNextToken();
-	Expr();
+	condResult = Expr();
+
+	jmpDownQuad->operation = "BRZ";
+	jmpDownQuad->arg2 = condResult;
+	m_QuadTable->push_back(jmpDownQuad);
 
 	if (g_CurrentToken->symbol != ")")
 	{
@@ -341,6 +399,30 @@ string Parser::ElseIf()
 	}
 
 	++m_ExprLevel;
+	g_CurrentToken = GetNextToken();
+	Block();
+
+	if (g_CurrentToken->symbol != ")")
+	{
+		/*		ERROR		*/
+		throw std::runtime_error("Expected )");
+	}
+
+	--m_ExprLevel;
+
+	return jmpDownQuad;
+}
+
+string Parser::Else()
+{
+	if (g_CurrentToken->symbol != "(")
+	{
+		/*		ERROR		*/
+		throw std::runtime_error("Expected (");
+	}
+
+	++m_ExprLevel;
+
 	g_CurrentToken = GetNextToken();
 	Block();
 

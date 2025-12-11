@@ -21,7 +21,7 @@ int main() {
 
 	try
 	{
-		std::ifstream file("D:\\GitHub\\New folder\\Silly-Compiler\\Compiler\\Compiler\\Source.txt");
+		std::ifstream file("D:\\GitHub\\New folder\\Silly-Compiler\\Compiler\\Compiler\\Source - Copy.txt");
 		if (!file) {
 			std::cerr << "Failed to open file\n";
 			return 1;
