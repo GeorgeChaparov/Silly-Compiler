@@ -13,5 +13,9 @@ void Logger::Log(string _message, ErrorType _type, bool _includeCurrentToken)
 		std::cout << "Error: type " << static_cast<int>(_type) << ", " << _message << " at " 
 			<< g_CurrentLine << " / " << g_LineSymbolCount - g_CurrentToken->symbol.length() << std::endl;
 	}
-	
+}
+
+void Logger::Log(string _message)
+{
+	std::cout << "Error: " << _message << std::endl;
 }

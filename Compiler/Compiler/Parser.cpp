@@ -4,6 +4,8 @@
 #include "Logger.h"
 #include "Globals.h"
 #include "Consts.h"
+#include <charconv>
+#include <string_view>
 
 int Parser::m_ExprLevel = 0;
 
@@ -12,9 +14,15 @@ static const string M_RANDOM_STRING = "12422233456568678 34564365234 87923323 58
 
 size_t Parser::m_TableIndex = -1;
 int Parser::m_CustomVarIndex = 1;
-std::vector<Quad*>* Parser::m_QuadTable = new std::vector<Quad *>();
 
 size_t m_DefaultArgumentPosValue = SYMBOL_TABLE_SIZE + 100;
+
+bool IsInteger(std::string_view string) {
+	int value;
+	auto [ptr, ec] = std::from_chars(string.data(), string.data() + string.size(), value);
+
+	return ec == std::errc{} && ptr == string.data() + string.size();
+}
 
 size_t Parser::GenCustomVar()
 {
@@ -27,7 +35,7 @@ void Parser::Log()
 	std::cout << "Quad table:" << std::endl;
 	int index = 0;
 
-	for (auto& quad : *m_QuadTable)
+	for (auto& quad : *g_QuadTable)
 	{
 		if (quad->operation == "JMP")
 		{
@@ -56,6 +64,10 @@ void Parser::Log()
 				std::cout << index << " -> " << quad->operation << std::endl;
 			}
 			
+		}
+		else if (quad->operation == "SUP" || quad->operation == "SDW")
+		{
+			std::cout << index << " -> " << quad->operation << std::endl;
 		}
 		else
 		{
@@ -133,7 +145,16 @@ void Parser::Pars()
 
 		Quad* endQuad = new Quad();
 		endQuad->operation = "END";
-		m_QuadTable->push_back(endQuad);
+		g_QuadTable->push_back(endQuad);
+	}
+	catch (const std::exception& error)
+	{
+		Logger::Log(error.what(), ErrorType::Semantic);
+	}
+
+	try
+	{
+		SemanticValidation();
 
 		std::cout << "Parser completed" << std::endl;
 
@@ -141,7 +162,7 @@ void Parser::Pars()
 	}
 	catch (const std::exception& error)
 	{
-		Logger::Log(error.what(), ErrorType::Semantic);
+		Logger::Log(error.what());
 	}
 }
 
@@ -225,7 +246,7 @@ Quad* Parser::Stm()
 		}
 
 		quad->result = result;
-		m_QuadTable->push_back(quad);
+		g_QuadTable->push_back(quad);
 	}
 	// -:
 	else if (g_CurrentToken->symbol == "-:")
@@ -234,7 +255,7 @@ Quad* Parser::Stm()
 
 		Quad* quad = new Quad();
 		quad->operation = "IN";
-		m_QuadTable->push_back(quad);
+		g_QuadTable->push_back(quad);
 
 		g_CurrentToken = GetNextToken();
 	}
@@ -254,7 +275,7 @@ Quad* Parser::Stm()
 		// Else is just writing empty new line 
 		
 		quad->operation = "OUT";
-		m_QuadTable->push_back(quad);
+		g_QuadTable->push_back(quad);
 	}
 	else if (g_CurrentToken->symbol == ":")
 	{
@@ -269,13 +290,13 @@ Quad* Parser::Stm()
 			throw std::runtime_error("Expected (");
 		}
 
-		condStartPos = m_QuadTable->size();
+		condStartPos = g_QuadTable->size();
 
 		g_CurrentToken = GetNextToken();
 
 		jmpDownQuad->operation = "BRZ";
 		jmpDownQuad->arg2 = Expr();
-		m_QuadTable->push_back(jmpDownQuad);
+		g_QuadTable->push_back(jmpDownQuad);
 
 		if (g_CurrentToken->symbol != ")")
 		{
@@ -291,6 +312,10 @@ Quad* Parser::Stm()
 		}
 
 		++m_ExprLevel;
+		// This quad is used to keep track of the scope in validation and debugging.
+		Quad* scopeUp = new Quad();
+		scopeUp->operation = "SUP";
+		g_QuadTable->push_back(scopeUp);
 
 		g_CurrentToken = GetNextToken();
 
@@ -309,7 +334,7 @@ Quad* Parser::Stm()
 				{
 					// We are adding to "arg1", because if the command is "break", the default value of "arg1" is 1, and the default value of "continue" is 0. 
 					// That's so "break" can skip the "JMP" command that will return it to the condition of the "while".
-					quad->arg1 += m_QuadTable->size();
+					quad->arg1 += g_QuadTable->size();
 				}
 			}
 			else
@@ -321,9 +346,14 @@ Quad* Parser::Stm()
 		// We don't have anything in the body, just returning.
 		else
 		{
-			jmpDownQuad->arg1 = m_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable->size();
 			g_CurrentToken = GetNextToken();
+
 			--m_ExprLevel;
+			// This quad is used to keep track of the scope in validation and debugging.
+			Quad* scopeDown = new Quad();
+			scopeDown->operation = "SDW";
+			g_QuadTable->push_back(scopeDown);
 
 			return returnQuad;
 		}
@@ -335,6 +365,10 @@ Quad* Parser::Stm()
 		}
 
 		--m_ExprLevel;
+		// This quad is used to keep track of the scope in validation and debugging.
+		Quad* scopeDown = new Quad();
+		scopeDown->operation = "SDW";
+		g_QuadTable->push_back(scopeDown);
 
 		// If it's true, it's an "while"
 		if (m_ExprLevel % 2 == 0)
@@ -351,9 +385,9 @@ Quad* Parser::Stm()
 			Quad* jmpUpQuad = new Quad();
 			jmpUpQuad->operation = "JMP";
 			jmpUpQuad->arg1 = condStartPos;
-			m_QuadTable->push_back(jmpUpQuad);
+			g_QuadTable->push_back(jmpUpQuad);
 
-			jmpDownQuad->arg1 = m_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable->size();
 
 			// Returning because everything else below is for "ifs".
 			return returnQuad;
@@ -385,12 +419,12 @@ Quad* Parser::Stm()
 		g_CurrentToken = GetNextToken();
 		if (g_CurrentToken->symbol == ";;")
 		{
-			m_QuadTable->push_back(jmpAfterIfQuad);
+			g_QuadTable->push_back(jmpAfterIfQuad);
 			
 			// This is used to store all the "if-else-es"'s "JMP" quads that point to the end of the "if"
 			std::vector<Quad*>* elses = new std::vector<Quad*>();
 
-			jmpDownQuad->arg1 = m_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable->size();
 			do 
 			{
 				g_CurrentToken = GetNextToken();
@@ -400,9 +434,9 @@ Quad* Parser::Stm()
 				Quad* jmpAfterElseQuad = new Quad();
 				jmpAfterElseQuad->operation = "JMP";
 				elses->push_back(jmpAfterElseQuad);
-				m_QuadTable->push_back(jmpAfterElseQuad);
+				g_QuadTable->push_back(jmpAfterElseQuad);
 
-				elseQuad->arg1 = m_QuadTable->size();
+				elseQuad->arg1 = g_QuadTable->size();
 				g_CurrentToken = GetNextToken();
 			}
 			while (g_CurrentToken->symbol == ";;");
@@ -416,28 +450,28 @@ Quad* Parser::Stm()
 
 			for (auto& _else : *elses)
 			{
-				_else->arg1 = m_QuadTable->size();
+				_else->arg1 = g_QuadTable->size();
 			}
 
-			jmpAfterIfQuad->arg1 = m_QuadTable->size();
+			jmpAfterIfQuad->arg1 = g_QuadTable->size();
 
 		}
 		else if (g_CurrentToken->symbol == ";;-")
 		{
-			m_QuadTable->push_back(jmpAfterIfQuad);
+			g_QuadTable->push_back(jmpAfterIfQuad);
 
 			g_CurrentToken = GetNextToken();
-			jmpDownQuad->arg1 = m_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable->size();
 
 			Else();
 
 			g_CurrentToken = GetNextToken();
 			
-			jmpAfterIfQuad->arg1 = m_QuadTable->size();
+			jmpAfterIfQuad->arg1 = g_QuadTable->size();
 		}
 		else
 		{
-			jmpDownQuad->arg1 = m_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable->size();
 		}
 	}
 	else if (g_CurrentToken->symbol == ")")
@@ -452,7 +486,7 @@ Quad* Parser::Stm()
 			{
 				// This is valid.
 				returnQuad->operation = "JMP";
-				m_QuadTable->push_back(returnQuad);
+				g_QuadTable->push_back(returnQuad);
 
 				g_CurrentToken = GetNextToken();
 				return returnQuad;
@@ -462,7 +496,7 @@ Quad* Parser::Stm()
 				// This is valid.
 				returnQuad->operation = "JMP";
 				returnQuad->arg1 = 1;
-				m_QuadTable->push_back(returnQuad);
+				g_QuadTable->push_back(returnQuad);
 
 				g_CurrentToken = GetNextToken();
 				return returnQuad;
@@ -490,7 +524,7 @@ Quad* Parser::ElseIf()
 
 	jmpDownQuad->operation = "BRZ";
 	jmpDownQuad->arg2 = Expr();
-	m_QuadTable->push_back(jmpDownQuad);
+	g_QuadTable->push_back(jmpDownQuad);
 
 	if (g_CurrentToken->symbol != ")")
 	{
@@ -506,6 +540,11 @@ Quad* Parser::ElseIf()
 	}
 
 	++m_ExprLevel;
+	// This quad is used to keep track of the scope in validation and debugging.
+	Quad* scopeUp = new Quad();
+	scopeUp->operation = "SUP";
+	g_QuadTable->push_back(scopeUp);
+
 	g_CurrentToken = GetNextToken();
 	Block();
 
@@ -516,6 +555,10 @@ Quad* Parser::ElseIf()
 	}
 
 	--m_ExprLevel;
+	// This quad is used to keep track of the scope in validation and debugging.
+	Quad* scopeDown = new Quad();
+	scopeDown->operation = "SDW";
+	g_QuadTable->push_back(scopeDown);
 
 	return jmpDownQuad;
 }
@@ -529,6 +572,10 @@ string Parser::Else()
 	}
 
 	++m_ExprLevel;
+	// This quad is used to keep track of the scope in validation and debugging.
+	Quad* scopeUp = new Quad();
+	scopeUp->operation = "SUP";
+	g_QuadTable->push_back(scopeUp);
 
 	g_CurrentToken = GetNextToken();
 	Block();
@@ -540,6 +587,10 @@ string Parser::Else()
 	}
 
 	--m_ExprLevel;
+	// This quad is used to keep track of the scope in validation and debugging.
+	Quad* scopeDown = new Quad();
+	scopeDown->operation = "SDW";
+	g_QuadTable->push_back(scopeDown);
 
 	return "";
 }
@@ -564,7 +615,7 @@ size_t Parser::Equality()
 
 		result = GenCustomVar();
 		Quad* quad = new Quad{ operation, arg1, arg2, result };
-		m_QuadTable->push_back(quad);
+		g_QuadTable->push_back(quad);
 		arg1 = result;
 	}
 
@@ -584,7 +635,7 @@ size_t Parser::Comparison()
 		g_CurrentToken = GetNextToken();
 		arg2 = Comparison();
 		result = GenCustomVar();
-		m_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
+		g_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
 		arg1 = result;
 	}
 
@@ -604,7 +655,7 @@ size_t Parser::Term()
 		g_CurrentToken = GetNextToken();
 		arg2 = Term();
 		result = GenCustomVar();
-		m_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
+		g_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
 		arg1 = result;
 	}
 
@@ -624,7 +675,7 @@ size_t Parser::Factor()
 		g_CurrentToken = GetNextToken();
 		arg2 = Factor();
 		result = GenCustomVar();
-		m_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
+		g_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
 		arg1 = result;
 	}
 
@@ -666,4 +717,137 @@ size_t Parser::Primary()
 	}
 
 	return arg;
+}
+
+
+void Parser::SemanticValidation()
+{
+	// Contains all defined variables. Each vector in the second dimension is a different scope.
+	std::vector<std::vector<string>*>* definedVariable = new std::vector<std::vector<string>*>();
+	definedVariable->push_back(new std::vector<string>());
+
+	// Checks if the given variable is defined in the 2D vector (definedVariable).
+	auto isDefined = [definedVariable](string x) 
+	{
+		for (auto& scope : *definedVariable)
+		{
+			for (auto& variable : *scope)
+			{
+				if (variable == x)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	};
+
+	int currentQuadIndex = 0;
+	while (currentQuadIndex < g_QuadTable->size())
+	{
+		Quad* currentQuad = g_QuadTable->at(currentQuadIndex);
+		string quadStrResult;
+		string quadStrArg1;
+		string quadStrArg2;
+		string quadOperation = currentQuad->operation;
+
+		std::vector<string>* currentScope = definedVariable->back();
+
+		if (quadOperation == "::")
+		{
+			quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
+			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+
+			if (!IsInteger(quadStrArg1) && !isDefined(quadStrArg1))
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Undefined variable: " + quadStrArg1);
+			}
+
+			if (!isDefined(quadStrResult))
+			{
+				currentScope->push_back(quadStrResult);
+			}
+		}
+		else if (quadOperation == "::::" ||
+				 quadOperation == "::;;" ||
+				 quadOperation == ";;::" ||
+				 quadOperation == ";;;;" ||
+				 quadOperation == ":::" ||
+				 quadOperation == ":;" )
+		{
+			quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
+			quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
+			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+
+			if (!IsInteger(quadStrArg1) && !isDefined(quadStrArg1))
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Undefined variable: " + quadStrArg1);
+			}
+
+			if (!IsInteger(quadStrArg2) && !isDefined(quadStrArg2))
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Undefined variable: " + quadStrArg2);
+			}
+
+			if (!isDefined(quadStrResult))
+			{
+				currentScope->push_back(quadStrResult);
+			}
+		}
+		else if (quadOperation == "OUT")
+		{
+			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+
+			if (!currentQuad->result)
+			{
+				++currentQuadIndex;
+				continue;
+			}
+
+			if (!IsInteger(quadStrResult) && !isDefined(quadStrResult))
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Undefined variable: " + quadStrResult);
+			}
+		}
+		else if (quadOperation == "IN")
+		{
+			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+
+			if (!currentQuad->result)
+			{
+				++currentQuadIndex;
+				continue;
+			}
+
+			if (!isDefined(quadStrResult))
+			{
+				currentScope->push_back(quadStrResult);
+			}
+		}
+		else if (quadOperation == "BRZ")
+		{
+			quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
+
+			if (!IsInteger(quadStrArg2) && !isDefined(quadStrArg2))
+			{
+				/*		ERROR		*/
+				throw std::runtime_error("Undefined variable: " + quadStrArg2);
+			}
+		}
+		else if (quadOperation == "SUP")
+		{
+			definedVariable->push_back(new std::vector<string>());
+		}
+		else if (quadOperation == "SDW")
+		{
+			definedVariable->pop_back();
+		}
+
+		++currentQuadIndex;
+	}
 }

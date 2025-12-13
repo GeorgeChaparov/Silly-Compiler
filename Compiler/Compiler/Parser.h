@@ -24,7 +24,6 @@ private:
 	static int m_CustomVarIndex;
 
 	static size_t m_TableIndex;
-	static std::vector<Quad*>* m_QuadTable;
 
 	static SymbolTableItem* GetNextToken(bool includeNewLine);
 	static void ReturnWithOneToken();
@@ -45,5 +44,7 @@ private:
 	static size_t Term();
 	static size_t Factor();
 	static size_t Primary();
+
+	static void SemanticValidation();
 };
 

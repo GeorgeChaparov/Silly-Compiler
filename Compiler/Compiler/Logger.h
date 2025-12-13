@@ -13,5 +13,6 @@ class Logger
 {
 public:
 	static void Log(string message, ErrorType type, bool includeCurrentToken = true);
+	static void Log(string _message);
 };
 

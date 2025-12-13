@@ -6,3 +6,4 @@ unsigned int g_LineSymbolCount = 1;
 SymbolTableItem* g_CurrentToken = new SymbolTableItem{ "", SymbolCode::Unknown };
 std::string g_Document = "";
 int g_DocumentLength = g_Document.length();
+std::vector<Quad*>* g_QuadTable = new std::vector<Quad*>();
