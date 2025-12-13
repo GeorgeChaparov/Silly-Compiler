@@ -34,9 +34,9 @@ private:
 	static void Log();
 
 	static void Start();
-	static void Block();
-	static string Stms();
-	static string Stm();
+	static std::vector<Quad*>* Block();
+	static std::vector<Quad*>* Stms();
+	static Quad* Stm();
 	static Quad* ElseIf();
 	static string Else();
 	static size_t Expr();
