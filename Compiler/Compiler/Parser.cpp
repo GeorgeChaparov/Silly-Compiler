@@ -158,7 +158,7 @@ std::vector<Quad*>* Parser::Block()
 
 std::vector<Quad*>* Parser::Stms()
 {
-	std::vector<Quad*>* returnQuads = new std::vector<Quad*>();
+	std::vector<Quad*>* returnQuads = new std::vector<Quad*>(); // Used to store all of the "continue" and "break" quads so that they can be passed to the "while" they are meant for.
 
 	// We return if the current character is ")" because that means we are exiting a scope (the body of ether "if" or "while").
 	if (g_CurrentToken->symbol == ")")
@@ -169,6 +169,7 @@ std::vector<Quad*>* Parser::Stms()
 	Quad* quad = Stm();
 	if (quad->operation != "")
 	{
+		// Adding the quad only if there is something meaningful in it.
 		returnQuads->push_back(quad);
 	}
 	
@@ -179,8 +180,10 @@ std::vector<Quad*>* Parser::Stms()
 	{
 		return returnQuads;
 	}
+
 	std::vector<Quad*>* Quads = Stms();
 	returnQuads->insert(returnQuads->end(), Quads->begin(), Quads->end());
+
 	return returnQuads;
 }
 
@@ -241,20 +244,25 @@ Quad* Parser::Stm()
 		Quad* quad = new Quad();
 
 		g_CurrentToken = GetNextToken();
-
+		
+		SymbolTableItem* nextToken = CheckNextToken(true);
 		// :- expr
-		quad->result = Expr();
+		if (nextToken->symbol != "\n")
+		{
+			quad->result = Expr();
+		}
+		// Else is just writing empty new line 
+		
 		quad->operation = "OUT";
 		m_QuadTable->push_back(quad);
 	}
 	else if (g_CurrentToken->symbol == ":")
 	{
-		size_t condStartPos;
-		std::vector<Quad*>* elses = new std::vector<Quad*>();
-		Quad* jmpDownQuad = new Quad();
+		size_t condStartPos; // Marks the position in the quad table of the first command that generates the condition.
+		
+		Quad* jmpDownQuad = new Quad(); // Used to jump to the first "if-else", or to the "else" if there is no "if-else", or to skip the "if", or to skip the "while".
 
 		g_CurrentToken = GetNextToken();
-
 		if (g_CurrentToken->symbol != "(")
 		{
 			/*		ERROR		*/
@@ -285,22 +293,32 @@ Quad* Parser::Stm()
 		++m_ExprLevel;
 
 		g_CurrentToken = GetNextToken();
+
+		// This check is so that we skip empty "ifs" or "whiles";
 		if (g_CurrentToken->symbol != ")")
 		{
+			// As the syntax of the "if" and the "while" are the same, we decide which is which based on the scope level .
+			// (level 0 - its an "while", level 1 - its an "if", level 2 - its an "while"....).
 			if (m_ExprLevel % 2 != 0)
 			{
+				// Its "while".
+				// There might be "continue" or "break". That's why we are storing the return value from "Block()".
 				std::vector<Quad*>* quads = Block();
 
 				for (auto& quad : *quads)
 				{
+					// We are adding to "arg1", because if the command is "break", the default value of "arg1" is 1, and the default value of "continue" is 0. 
+					// That's so "break" can skip the "JMP" command that will return it to the condition of the "while".
 					quad->arg1 += m_QuadTable->size();
 				}
 			}
 			else
 			{
+				// Its "if".
 				Block();
 			}
 		}
+		// We don't have anything in the body, just returning.
 		else
 		{
 			jmpDownQuad->arg1 = m_QuadTable->size();
@@ -318,7 +336,7 @@ Quad* Parser::Stm()
 
 		--m_ExprLevel;
 
-		// Its an "While", we do not need to do anything more. Else it will be an "If"
+		// If it's true, it's an "while"
 		if (m_ExprLevel % 2 == 0)
 		{
 			g_CurrentToken = GetNextToken();
@@ -329,6 +347,7 @@ Quad* Parser::Stm()
 				throw std::runtime_error("This is an 'While' not an 'if'!");
 			}
 			
+			// Creating the jump command that will point to the beginning of the condition of the "while"
 			Quad* jmpUpQuad = new Quad();
 			jmpUpQuad->operation = "JMP";
 			jmpUpQuad->arg1 = condStartPos;
@@ -336,9 +355,27 @@ Quad* Parser::Stm()
 
 			jmpDownQuad->arg1 = m_QuadTable->size();
 
+			// Returning because everything else below is for "ifs".
 			return returnQuad;
 		}
 
+		// This quad is used to "JMP" after the whole "if"
+		// If we have if:
+		// 1 -  (a == 2) 
+		// 2 -  {
+		// 3 -  
+		// 4 -  } 
+		// 5 -  else if (b == 2)
+		// 6 -  {
+		// 7 -  
+		// 8 -  }
+		// 9 -  else
+		// 10 - {
+		// 11 - 
+		// 12 - }
+		// 13 - 
+		//
+		// This quad will point to 13 and it will be at the end of each block
 		Quad* jmpAfterIfQuad = new Quad();
 		jmpAfterIfQuad->operation = "JMP";
 		
@@ -350,12 +387,16 @@ Quad* Parser::Stm()
 		{
 			m_QuadTable->push_back(jmpAfterIfQuad);
 			
+			// This is used to store all the "if-else-es"'s "JMP" quads that point to the end of the "if"
+			std::vector<Quad*>* elses = new std::vector<Quad*>();
+
 			jmpDownQuad->arg1 = m_QuadTable->size();
 			do 
 			{
 				g_CurrentToken = GetNextToken();
 				Quad* elseQuad = ElseIf();
 
+				// This is used for the same as "jmpAfterIfQuad" but it's for every "if-else" except the first one.
 				Quad* jmpAfterElseQuad = new Quad();
 				jmpAfterElseQuad->operation = "JMP";
 				elses->push_back(jmpAfterElseQuad);
