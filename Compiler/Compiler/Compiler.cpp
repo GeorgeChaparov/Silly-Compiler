@@ -7,16 +7,16 @@
 #include "Parser.h"
 #include "Logger.h"
 #include "SymbolTable.h"
+#include "VirtualMachine.h"
 
 
 // g_VariableName -> variable in Global.h
 // m_VariableName -> private member variable
 // M_VARIABLE_NAME -> member constant
-// VARIABLE_NAME -> constant in Consts.h
-// varableName -> scoped variable
+// VARIABLE_NAME -> constant in Utils\Consts\Consts.h
+// variableName -> scoped variable
 // _variableName -> function or method parameter
 
-using namespace std;
 int main() {
 
 	try
@@ -30,18 +30,19 @@ int main() {
 		std::ostringstream buffer;
 		buffer << file.rdbuf();
 
-		string fileStream = buffer.str();
+		std::string fileStream = buffer.str();
 
 		SymbolTable::Init();
 		Lex::Init(fileStream);
 		Parser::Pars();
-		
 
-		//Lex::Build();
-
-		cout << endl << endl << "File:" << endl << fileStream << endl << endl;
+		std::cout << std::endl << std::endl << "File:" << std::endl << fileStream << std::endl << std::endl;
 
 		SymbolTable::Log();
+
+		std::cout << std::endl << std::endl << std::endl << std::endl << "Result" << std::endl << std::endl;
+
+		VirtualMachine::Run();
 	}
 	catch (const std::exception& error)
 	{

@@ -4,8 +4,6 @@
 #include "Logger.h"
 #include "Globals.h"
 #include "Consts.h"
-#include <charconv>
-#include <string_view>
 
 int Parser::m_ExprLevel = 0;
 
@@ -16,13 +14,6 @@ size_t Parser::m_TableIndex = -1;
 int Parser::m_CustomVarIndex = 1;
 
 size_t m_DefaultArgumentPosValue = SYMBOL_TABLE_SIZE + 100;
-
-bool IsInteger(std::string_view string) {
-	int value;
-	auto [ptr, ec] = std::from_chars(string.data(), string.data() + string.size(), value);
-
-	return ec == std::errc{} && ptr == string.data() + string.size();
-}
 
 size_t Parser::GenCustomVar()
 {
@@ -263,13 +254,12 @@ Quad* Parser::Stm()
 	else if (g_CurrentToken->symbol == ":-")
 	{
 		Quad* quad = new Quad();
-
-		g_CurrentToken = GetNextToken();
 		
 		SymbolTableItem* nextToken = CheckNextToken(true);
 		// :- expr
 		if (nextToken->symbol != "\n")
 		{
+			g_CurrentToken = GetNextToken();
 			quad->result = Expr();
 		}
 		// Else is just writing empty new line 
@@ -330,6 +320,13 @@ Quad* Parser::Stm()
 				// There might be "continue" or "break". That's why we are storing the return value from "Block()".
 				std::vector<Quad*>* quads = Block();
 
+
+				--m_ExprLevel;
+				// This quad is used to keep track of the scope in validation and debugging.
+				Quad* scopeDown = new Quad();
+				scopeDown->operation = "SDW";
+				g_QuadTable->push_back(scopeDown);
+
 				for (auto& quad : *quads)
 				{
 					// We are adding to "arg1", because if the command is "break", the default value of "arg1" is 1, and the default value of "continue" is 0. 
@@ -341,6 +338,13 @@ Quad* Parser::Stm()
 			{
 				// Its "if".
 				Block();
+
+
+				--m_ExprLevel;
+				// This quad is used to keep track of the scope in validation and debugging.
+				Quad* scopeDown = new Quad();
+				scopeDown->operation = "SDW";
+				g_QuadTable->push_back(scopeDown);
 			}
 		}
 		// We don't have anything in the body, just returning.
@@ -363,12 +367,6 @@ Quad* Parser::Stm()
 			/*		ERROR		*/
 			throw std::runtime_error("Expected )");
 		}
-
-		--m_ExprLevel;
-		// This quad is used to keep track of the scope in validation and debugging.
-		Quad* scopeDown = new Quad();
-		scopeDown->operation = "SDW";
-		g_QuadTable->push_back(scopeDown);
 
 		// If it's true, it's an "while"
 		if (m_ExprLevel % 2 == 0)
@@ -800,13 +798,13 @@ void Parser::SemanticValidation()
 		}
 		else if (quadOperation == "OUT")
 		{
-			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
-
 			if (!currentQuad->result)
 			{
 				++currentQuadIndex;
 				continue;
 			}
+
+			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
 
 			if (!IsInteger(quadStrResult) && !isDefined(quadStrResult))
 			{
@@ -816,13 +814,13 @@ void Parser::SemanticValidation()
 		}
 		else if (quadOperation == "IN")
 		{
-			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
-
 			if (!currentQuad->result)
 			{
 				++currentQuadIndex;
 				continue;
 			}
+
+			quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
 
 			if (!isDefined(quadStrResult))
 			{

@@ -130,21 +130,27 @@
   <ItemGroup>
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="Consts.h" />
+    <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="GrammarTrie.cpp" />
     <ClCompile Include="Lex.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="RuntimeGlobals.cpp" />
     <ClCompile Include="SymbolTable.cpp" />
+    <ClCompile Include="VirtualMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Debugger.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="GrammarTrie.h" />
     <ClInclude Include="Lex.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Parser.h" />
+    <ClInclude Include="RuntimeGlobals.h" />
     <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="VirtualMachine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

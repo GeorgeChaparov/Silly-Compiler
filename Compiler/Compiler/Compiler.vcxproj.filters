@@ -37,6 +37,12 @@
     <Filter Include="Source Files\Utils\Globals">
       <UniqueIdentifier>{95ab103c-b334-453d-b6bd-f1d55d01d40e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Debugger">
+      <UniqueIdentifier>{6ff42340-eae1-46fe-9a5e-bf2982654770}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Virtual machine">
+      <UniqueIdentifier>{fce6b4d8-9d24-4a4f-a324-ecbe2989b78b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lex.cpp">
@@ -63,6 +69,15 @@
     <ClCompile Include="Globals.cpp">
       <Filter>Source Files\Utils\Globals</Filter>
     </ClCompile>
+    <ClCompile Include="Debugger.cpp">
+      <Filter>Source Files\Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="VirtualMachine.cpp">
+      <Filter>Source Files\Virtual machine</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeGlobals.cpp">
+      <Filter>Source Files\Utils\Globals</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lex.h">
@@ -84,6 +99,15 @@
       <Filter>Source Files\Logger</Filter>
     </ClInclude>
     <ClInclude Include="Globals.h">
+      <Filter>Source Files\Utils\Globals</Filter>
+    </ClInclude>
+    <ClInclude Include="Debugger.h">
+      <Filter>Source Files\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtualMachine.h">
+      <Filter>Source Files\Virtual machine</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeGlobals.h">
       <Filter>Source Files\Utils\Globals</Filter>
     </ClInclude>
   </ItemGroup>
