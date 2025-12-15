@@ -3,7 +3,7 @@
 size_t g_CurrentPosition = 0;
 unsigned int g_CurrentLine = 1;
 unsigned int g_LineSymbolCount = 1;
-SymbolTableItem* g_CurrentToken = new SymbolTableItem{ "", SymbolCode::Unknown };
+SymbolTableItem g_CurrentToken = SymbolTableItem{ "", SymbolCode::Unknown };
 std::string g_Document = "";
 int g_DocumentLength = g_Document.length();
-std::vector<Quad*>* g_QuadTable = new std::vector<Quad*>();
+std::vector<std::shared_ptr<Quad>> g_QuadTable = std::vector<std::shared_ptr<Quad>>();

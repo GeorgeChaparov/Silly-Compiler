@@ -240,7 +240,7 @@ size_t Lex::AddUnknownToken(char _ch)
 
 	try
 	{
-		TrieNode* node = GrammarTrie::Find(buff);
+		std::shared_ptr<TrieNode> node = GrammarTrie::Find(buff);
 
 		return SymbolTable::AddItem(node->tokenValue, node->tokenType);
 	}

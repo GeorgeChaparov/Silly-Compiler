@@ -9,7 +9,7 @@ struct TrieNode
 {
 	static const int CHILDREN_COUNT = 3; // ':', ';', '-'
 	char symbol[CHILDREN_COUNT] = { ':', ';', '-' };
-	TrieNode* children[CHILDREN_COUNT] = { nullptr, nullptr, nullptr };
+	std::shared_ptr<TrieNode> children[CHILDREN_COUNT] = { nullptr, nullptr, nullptr };
 
 	bool isEnd = false;
 	SymbolCode tokenType = SymbolCode::Unknown;  // "Operator"
@@ -20,10 +20,10 @@ class GrammarTrie
 {
 public:
 	static void Insert(string token, SymbolCode type);
-	static TrieNode* Find(string token);
+	static std::shared_ptr<TrieNode> Find(string token);
 
 private:
-	static TrieNode* m_Root;
+	static std::shared_ptr<TrieNode> m_Root;
 
 	static int GetIndex(char c);
 };

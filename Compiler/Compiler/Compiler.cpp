@@ -8,7 +8,7 @@
 #include "Logger.h"
 #include "SymbolTable.h"
 #include "VirtualMachine.h"
-
+#include "Debugger.h"
 
 // g_VariableName -> variable in Global.h
 // m_VariableName -> private member variable
@@ -19,9 +19,11 @@
 
 int main() {
 
+	bool useDebugger = false;
+
 	try
 	{
-		std::ifstream file("D:\\GitHub\\New folder\\Silly-Compiler\\Compiler\\Compiler\\Source - Copy.txt");
+		std::ifstream file("D:\\GitHub\\New folder\\Silly-Compiler\\Compiler\\Compiler\\Source.txt");
 		if (!file) {
 			std::cerr << "Failed to open file\n";
 			return 1;
@@ -42,7 +44,14 @@ int main() {
 
 		std::cout << std::endl << std::endl << std::endl << std::endl << "Result" << std::endl << std::endl;
 
-		VirtualMachine::Run();
+		if (useDebugger)
+		{
+			Debugger::Run();
+		}
+		else
+		{
+			VirtualMachine::Run();
+		}
 	}
 	catch (const std::exception& error)
 	{

@@ -45,11 +45,11 @@ void VirtualMachine::Step()
 			g_Variables.at(index).insert({ name , value });
 		};
 
-	Quad* currentQuad = g_QuadTable->at(g_QuadIndex);
+	Quad currentQuad = *g_QuadTable.at(g_QuadIndex);
 	string quadStrResult;
 	string quadStrArg1;
 	string quadStrArg2;
-	string quadOperation = currentQuad->operation;
+	string quadOperation = currentQuad.operation;
 
 	auto& currentScope = g_Variables.back();
 
@@ -59,8 +59,8 @@ void VirtualMachine::Step()
 
 	if (quadOperation == "::")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 
@@ -68,9 +68,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == "::::")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
@@ -80,9 +80,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == "::;;")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
@@ -92,9 +92,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == ";;;;")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
@@ -104,9 +104,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == ";;::")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
@@ -116,9 +116,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == ":::")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
@@ -128,9 +128,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == ":;")
 	{
-		quadStrArg1 = SymbolTable::GetElementAt(currentQuad->arg1)->symbol;
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrArg1 = SymbolTable::GetElementAt(currentQuad.arg1)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
 		arg1Val = IsInteger(quadStrArg1) ? ConvertToInt(quadStrArg1) : getValueIfDefined(quadStrArg1);
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
@@ -140,9 +140,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == "OUT")
 	{
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
-		if (!currentQuad->result)
+		if (!currentQuad.result)
 		{
 			std::cout << std::endl;
 		}
@@ -154,9 +154,9 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == "IN")
 	{
-		quadStrResult = SymbolTable::GetElementAt(currentQuad->result)->symbol;
+		quadStrResult = SymbolTable::GetElementAt(currentQuad.result)->symbol;
 
-		if (!currentQuad->result)
+		if (!currentQuad.result)
 		{
 			std::cin;
 		}
@@ -168,20 +168,20 @@ void VirtualMachine::Step()
 	}
 	else if (quadOperation == "BRZ")
 	{
-		quadStrArg2 = SymbolTable::GetElementAt(currentQuad->arg2)->symbol;
+		quadStrArg2 = SymbolTable::GetElementAt(currentQuad.arg2)->symbol;
 
 
 		arg2Val = IsInteger(quadStrArg2) ? ConvertToInt(quadStrArg2) : getValueIfDefined(quadStrArg2);
 
 		if (!arg2Val)
 		{
-			g_QuadIndex = currentQuad->arg1;
+			g_QuadIndex = currentQuad.arg1;
 			return;
 		}
 	}
 	else if (quadOperation == "JMP")
 	{
-		g_QuadIndex = currentQuad->arg1;
+		g_QuadIndex = currentQuad.arg1;
 		return;
 	}
 	else if (quadOperation == "SUP")
@@ -199,7 +199,7 @@ void VirtualMachine::Step()
 
 void VirtualMachine::Run()
 {
-	while (g_QuadIndex < g_QuadTable->size())
+	while (g_QuadIndex < g_QuadTable.size())
 	{
 		Step();
 	}

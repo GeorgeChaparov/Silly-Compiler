@@ -1,16 +1,16 @@
 #include "GrammarTrie.h"
 
-TrieNode* GrammarTrie::m_Root = new TrieNode();
+std::shared_ptr<TrieNode> GrammarTrie::m_Root = std::make_shared<TrieNode>();
 
 void GrammarTrie::Insert(string _token, SymbolCode _type) {
 
-	TrieNode* node = m_Root;
+	std::shared_ptr<TrieNode> node = m_Root;
 
 	for (char c : _token) {
 		int index = GetIndex(c);
 		if (!node->children[index])
 		{
-			node->children[index] = new TrieNode();
+			node->children[index] = std::make_shared<TrieNode>();
 		}
 			
 		node = node->children[index];
@@ -20,9 +20,9 @@ void GrammarTrie::Insert(string _token, SymbolCode _type) {
 	node->tokenValue = _token;
 }
 
-TrieNode* GrammarTrie::Find(string _token)
+std::shared_ptr<TrieNode> GrammarTrie::Find(string _token)
 {
-	TrieNode* node = m_Root;
+	std::shared_ptr<TrieNode> node = m_Root;
 
 	for (char ch : _token) {
 		int index = GetIndex(ch);

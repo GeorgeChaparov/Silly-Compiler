@@ -20,58 +20,62 @@ size_t Parser::GenCustomVar()
 	return SymbolTable::AddItem("!" + std::to_string(m_CustomVarIndex++), SymbolCode::Identifier);
 }
 
+void Parser::LogQuad(int _index)
+{
+	Quad quad = *g_QuadTable.at(_index);
+
+	if (quad.operation == "JMP")
+	{
+		std::cout << _index << " -> " << quad.operation << " at " << quad.arg1 << std::endl;
+	}
+	else if (quad.operation == "BRZ")
+	{
+		std::cout << _index << " -> " << quad.operation << " at " << quad.arg1 << " if " << SymbolTable::GetElementAt(quad.arg2)->symbol << std::endl;
+	}
+	else if (quad.arg2)
+	{
+		std::cout << _index << " -> " << SymbolTable::GetElementAt(quad.result)->symbol << " = " << SymbolTable::GetElementAt(quad.arg1)->symbol << " " << quad.operation << " " << SymbolTable::GetElementAt(quad.arg2)->symbol << std::endl;
+	}
+	else if (quad.operation == "END")
+	{
+		std::cout << _index << " -> " << quad.operation << std::endl;
+	}
+	else if (quad.operation == "IN" || quad.operation == "OUT")
+	{
+		if (quad.result)
+		{
+			std::cout << _index << " -> " << quad.operation << " " << SymbolTable::GetElementAt(quad.result)->symbol << std::endl;
+		}
+		else
+		{
+			std::cout << _index << " -> " << quad.operation << std::endl;
+		}
+
+	}
+	else if (quad.operation == "SUP" || quad.operation == "SDW")
+	{
+		std::cout << _index << " -> " << quad.operation << std::endl;
+	}
+	else
+	{
+		std::cout << _index << " -> " << SymbolTable::GetElementAt(quad.result)->symbol << " " << quad.operation << " " << SymbolTable::GetElementAt(quad.arg1)->symbol << std::endl;
+	}
+}
+
 void Parser::Log()
 {
 	std::cout << std::endl;
 	std::cout << "Quad table:" << std::endl;
-	int index = 0;
 
-	for (auto& quad : *g_QuadTable)
+	for (int i = 0; i < g_QuadTable.size(); i++)
 	{
-		if (quad->operation == "JMP")
-		{
-			std::cout << index << " -> " << quad->operation << " at " << quad->arg1 << std::endl;
-		}
-		else if (quad->operation == "BRZ")
-		{
-			std::cout << index << " -> " << quad->operation << " at " << quad->arg1 << " if " << SymbolTable::GetElementAt(quad->arg2)->symbol << std::endl;
-		}
-		else if (quad->arg2)
-		{
-			std::cout << index << " -> " << SymbolTable::GetElementAt(quad->result)->symbol << " = " << SymbolTable::GetElementAt(quad->arg1)->symbol << " " << quad->operation << " " << SymbolTable::GetElementAt(quad->arg2)->symbol << std::endl;
-		}
-		else if (quad->operation == "END")
-		{
-			std::cout << index << " -> " << quad->operation << std::endl;
-		}
-		else if (quad->operation == "IN" || quad->operation == "OUT")
-		{
-			if (quad->result)
-			{
-				std::cout << index << " -> " << quad->operation << " " << SymbolTable::GetElementAt(quad->result)->symbol << std::endl;
-			}
-			else
-			{
-				std::cout << index << " -> " << quad->operation << std::endl;
-			}
-			
-		}
-		else if (quad->operation == "SUP" || quad->operation == "SDW")
-		{
-			std::cout << index << " -> " << quad->operation << std::endl;
-		}
-		else
-		{
-			std::cout << index << " -> " << SymbolTable::GetElementAt(quad->result)->symbol << " " << quad->operation << " " << SymbolTable::GetElementAt(quad->arg1)->symbol << std::endl;
-		}
-
-		++index;
+		LogQuad(i);
 	}
 }
 
 void Parser::ReturnWithOneToken()
 {
-	if (g_CurrentToken->symbol == "\n")
+	if (g_CurrentToken.symbol == "\n")
 	{
 		g_LineSymbolCount -= 1;
 	}
@@ -82,7 +86,7 @@ void Parser::ReturnWithOneToken()
 	}
 }
 
-SymbolTableItem* Parser::GetNextToken(bool _includeNewLine = false)
+SymbolTableItem Parser::GetNextToken(bool _includeNewLine = false)
 {
 	try
 	{
@@ -94,10 +98,10 @@ SymbolTableItem* Parser::GetNextToken(bool _includeNewLine = false)
 		}
 		else if (m_TableIndex == END_OF_FILE_CODE)
 		{
-			return new SymbolTableItem{ M_RANDOM_STRING, SymbolCode::EndFile };
+			return SymbolTableItem{ M_RANDOM_STRING, SymbolCode::EndFile };
 		}
 
-		return SymbolTable::GetElementAt(m_TableIndex);
+		return *SymbolTable::GetElementAt(m_TableIndex);
 	}
 	catch (const std::exception& error)
 	{
@@ -105,7 +109,7 @@ SymbolTableItem* Parser::GetNextToken(bool _includeNewLine = false)
 	}
 }
 
-SymbolTableItem* Parser::CheckNextToken(bool _includeNewLine)
+SymbolTableItem Parser::CheckNextToken(bool _includeNewLine)
 {
 	try
 	{
@@ -117,10 +121,10 @@ SymbolTableItem* Parser::CheckNextToken(bool _includeNewLine)
 		}
 		else if (index == END_OF_FILE_CODE)
 		{
-			return new SymbolTableItem{ M_RANDOM_STRING, SymbolCode::EndFile };
+			return SymbolTableItem{ M_RANDOM_STRING, SymbolCode::EndFile };
 		}
 
-		return SymbolTable::GetElementAt(index);
+		return *SymbolTable::GetElementAt(index);
 	}
 	catch (const std::exception& error)
 	{
@@ -134,9 +138,9 @@ void Parser::Pars()
 	{
 		Start();
 
-		Quad* endQuad = new Quad();
+		std::shared_ptr<Quad> endQuad = std::make_shared<Quad>();
 		endQuad->operation = "END";
-		g_QuadTable->push_back(endQuad);
+		g_QuadTable.push_back(endQuad);
 	}
 	catch (const std::exception& error)
 	{
@@ -163,65 +167,65 @@ void Parser::Start()
 	Block();
 }
 
-std::vector<Quad*>* Parser::Block()
+std::vector<std::shared_ptr<Quad>> Parser::Block()
 {
 	return Stms();
 }
 
-std::vector<Quad*>* Parser::Stms()
+std::vector<std::shared_ptr<Quad>> Parser::Stms()
 {
-	std::vector<Quad*>* returnQuads = new std::vector<Quad*>(); // Used to store all of the "continue" and "break" quads so that they can be passed to the "while" they are meant for.
+	std::vector<std::shared_ptr<Quad>> returnQuads = std::vector<std::shared_ptr<Quad>>(); // Used to store all of the "continue" and "break" quads so that they can be passed to the "while" they are meant for.
 
 	// We return if the current character is ")" because that means we are exiting a scope (the body of ether "if" or "while").
-	if (g_CurrentToken->symbol == ")")
+	if (g_CurrentToken.symbol == ")")
 	{
 		return returnQuads;
 	}
 
-	Quad* quad = Stm();
+	std::shared_ptr<Quad> quad = Stm();
 	if (quad->operation != "")
 	{
 		// Adding the quad only if there is something meaningful in it.
-		returnQuads->push_back(quad);
+		returnQuads.push_back(quad);
 	}
 	
 
-	SymbolTableItem* nextToken = CheckNextToken();
+	SymbolTableItem nextToken = CheckNextToken();
 
-	if (nextToken->code == SymbolCode::EndFile || g_CurrentToken->code == SymbolCode::EndFile)
+	if (nextToken.code == SymbolCode::EndFile || g_CurrentToken.code == SymbolCode::EndFile)
 	{
 		return returnQuads;
 	}
 
-	std::vector<Quad*>* Quads = Stms();
-	returnQuads->insert(returnQuads->end(), Quads->begin(), Quads->end());
+	std::vector<std::shared_ptr<Quad>> Quads = Stms();
+	returnQuads.insert(returnQuads.end(), Quads.begin(), Quads.end());
 
 	return returnQuads;
 }
 
-Quad* Parser::Stm()
+std::shared_ptr<Quad> Parser::Stm()
 {
-	Quad* returnQuad = new Quad();
+	std::shared_ptr<Quad> returnQuad = std::make_shared<Quad>();
 
 	// Ident
-	if (g_CurrentToken->code == SymbolCode::Identifier)
+	if (g_CurrentToken.code == SymbolCode::Identifier)
 	{
 		size_t arg1, result = m_TableIndex;
 
 		
 		//Ident ::
 		g_CurrentToken = GetNextToken();
-		if (g_CurrentToken->symbol != "::")
+		if (g_CurrentToken.symbol != "::")
 		{
 			/*		ERROR		*/
 			throw std::runtime_error("Expected ::");
 		}
 
-		Quad* quad = new Quad();
+		std::shared_ptr<Quad> quad = std::make_shared<Quad>();
 
 		g_CurrentToken = GetNextToken();
 		// Ident :: expr
-		if (g_CurrentToken->symbol != "-:")
+		if (g_CurrentToken.symbol != "-:")
 		{
 			arg1 = Expr();
 
@@ -237,27 +241,27 @@ Quad* Parser::Stm()
 		}
 
 		quad->result = result;
-		g_QuadTable->push_back(quad);
+		g_QuadTable.push_back(quad);
 	}
 	// -:
-	else if (g_CurrentToken->symbol == "-:")
+	else if (g_CurrentToken.symbol == "-:")
 	{
 		// This is valid. Its used to "eat" an character.
 
-		Quad* quad = new Quad();
+		std::shared_ptr<Quad> quad = std::make_shared<Quad>();
 		quad->operation = "IN";
-		g_QuadTable->push_back(quad);
+		g_QuadTable.push_back(quad);
 
 		g_CurrentToken = GetNextToken();
 	}
 	// :-
-	else if (g_CurrentToken->symbol == ":-")
+	else if (g_CurrentToken.symbol == ":-")
 	{
-		Quad* quad = new Quad();
+		std::shared_ptr<Quad> quad = std::make_shared<Quad>();
 		
-		SymbolTableItem* nextToken = CheckNextToken(true);
+		SymbolTableItem nextToken = CheckNextToken(true);
 		// :- expr
-		if (nextToken->symbol != "\n")
+		if (nextToken.symbol != "\n")
 		{
 			g_CurrentToken = GetNextToken();
 			quad->result = Expr();
@@ -265,37 +269,37 @@ Quad* Parser::Stm()
 		// Else is just writing empty new line 
 		
 		quad->operation = "OUT";
-		g_QuadTable->push_back(quad);
+		g_QuadTable.push_back(quad);
 	}
-	else if (g_CurrentToken->symbol == ":")
+	else if (g_CurrentToken.symbol == ":")
 	{
 		size_t condStartPos; // Marks the position in the quad table of the first command that generates the condition.
 		
-		Quad* jmpDownQuad = new Quad(); // Used to jump to the first "if-else", or to the "else" if there is no "if-else", or to skip the "if", or to skip the "while".
+		std::shared_ptr<Quad> jmpDownQuad = std::make_shared<Quad>(); // Used to jump to the first "if-else", or to the "else" if there is no "if-else", or to skip the "if", or to skip the "while".
 
 		g_CurrentToken = GetNextToken();
-		if (g_CurrentToken->symbol != "(")
+		if (g_CurrentToken.symbol != "(")
 		{
 			/*		ERROR		*/
 			throw std::runtime_error("Expected (");
 		}
 
-		condStartPos = g_QuadTable->size();
+		condStartPos = g_QuadTable.size();
 
 		g_CurrentToken = GetNextToken();
 
 		jmpDownQuad->operation = "BRZ";
 		jmpDownQuad->arg2 = Expr();
-		g_QuadTable->push_back(jmpDownQuad);
+		g_QuadTable.push_back(jmpDownQuad);
 
-		if (g_CurrentToken->symbol != ")")
+		if (g_CurrentToken.symbol != ")")
 		{
 			/*		ERROR		*/
 			throw std::runtime_error("Expected )");
 		}
 
 		g_CurrentToken = GetNextToken();
-		if (g_CurrentToken->symbol != "(")
+		if (g_CurrentToken.symbol != "(")
 		{
 			/*		ERROR		*/
 			throw std::runtime_error("Expected (");
@@ -303,14 +307,14 @@ Quad* Parser::Stm()
 
 		++m_ExprLevel;
 		// This quad is used to keep track of the scope in validation and debugging.
-		Quad* scopeUp = new Quad();
+		std::shared_ptr<Quad> scopeUp = std::make_shared<Quad>();
 		scopeUp->operation = "SUP";
-		g_QuadTable->push_back(scopeUp);
+		g_QuadTable.push_back(scopeUp);
 
 		g_CurrentToken = GetNextToken();
 
 		// This check is so that we skip empty "ifs" or "whiles";
-		if (g_CurrentToken->symbol != ")")
+		if (g_CurrentToken.symbol != ")")
 		{
 			// As the syntax of the "if" and the "while" are the same, we decide which is which based on the scope level .
 			// (level 0 - its an "while", level 1 - its an "if", level 2 - its an "while"....).
@@ -318,20 +322,20 @@ Quad* Parser::Stm()
 			{
 				// Its "while".
 				// There might be "continue" or "break". That's why we are storing the return value from "Block()".
-				std::vector<Quad*>* quads = Block();
+				std::vector<std::shared_ptr<Quad>> quads = Block();
 
 
 				--m_ExprLevel;
 				// This quad is used to keep track of the scope in validation and debugging.
-				Quad* scopeDown = new Quad();
+				std::shared_ptr<Quad> scopeDown = std::make_shared<Quad>();
 				scopeDown->operation = "SDW";
-				g_QuadTable->push_back(scopeDown);
+				g_QuadTable.push_back(scopeDown);
 
-				for (auto& quad : *quads)
+				for (auto& quad : quads)
 				{
 					// We are adding to "arg1", because if the command is "break", the default value of "arg1" is 1, and the default value of "continue" is 0. 
 					// That's so "break" can skip the "JMP" command that will return it to the condition of the "while".
-					quad->arg1 += g_QuadTable->size();
+					quad->arg1 += g_QuadTable.size();
 				}
 			}
 			else
@@ -342,27 +346,27 @@ Quad* Parser::Stm()
 
 				--m_ExprLevel;
 				// This quad is used to keep track of the scope in validation and debugging.
-				Quad* scopeDown = new Quad();
+				std::shared_ptr<Quad> scopeDown = std::make_shared<Quad>();
 				scopeDown->operation = "SDW";
-				g_QuadTable->push_back(scopeDown);
+				g_QuadTable.push_back(scopeDown);
 			}
 		}
 		// We don't have anything in the body, just returning.
 		else
 		{
-			jmpDownQuad->arg1 = g_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable.size();
 			g_CurrentToken = GetNextToken();
 
 			--m_ExprLevel;
 			// This quad is used to keep track of the scope in validation and debugging.
-			Quad* scopeDown = new Quad();
+			std::shared_ptr<Quad> scopeDown = std::make_shared<Quad>();
 			scopeDown->operation = "SDW";
-			g_QuadTable->push_back(scopeDown);
+			g_QuadTable.push_back(scopeDown);
 
 			return returnQuad;
 		}
 		
-		if (g_CurrentToken->symbol != ")")
+		if (g_CurrentToken.symbol != ")")
 		{
 			/*		ERROR		*/
 			throw std::runtime_error("Expected )");
@@ -373,19 +377,19 @@ Quad* Parser::Stm()
 		{
 			g_CurrentToken = GetNextToken();
 
-			if (g_CurrentToken->symbol == ";;")
+			if (g_CurrentToken.symbol == ";;")
 			{
 				/*		ERROR		*/
 				throw std::runtime_error("This is an 'While' not an 'if'!");
 			}
 			
 			// Creating the jump command that will point to the beginning of the condition of the "while"
-			Quad* jmpUpQuad = new Quad();
+			std::shared_ptr<Quad> jmpUpQuad = std::make_shared<Quad>();
 			jmpUpQuad->operation = "JMP";
 			jmpUpQuad->arg1 = condStartPos;
-			g_QuadTable->push_back(jmpUpQuad);
+			g_QuadTable.push_back(jmpUpQuad);
 
-			jmpDownQuad->arg1 = g_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable.size();
 
 			// Returning because everything else below is for "ifs".
 			return returnQuad;
@@ -408,38 +412,38 @@ Quad* Parser::Stm()
 		// 13 - 
 		//
 		// This quad will point to 13 and it will be at the end of each block
-		Quad* jmpAfterIfQuad = new Quad();
+		std::shared_ptr<Quad> jmpAfterIfQuad = std::make_shared<Quad>();
 		jmpAfterIfQuad->operation = "JMP";
 		
 
-		SymbolTableItem* nextToken = CheckNextToken();
+		SymbolTableItem nextToken = CheckNextToken();
 
 		g_CurrentToken = GetNextToken();
-		if (g_CurrentToken->symbol == ";;")
+		if (g_CurrentToken.symbol == ";;")
 		{
-			g_QuadTable->push_back(jmpAfterIfQuad);
+			g_QuadTable.push_back(jmpAfterIfQuad);
 			
 			// This is used to store all the "if-else-es"'s "JMP" quads that point to the end of the "if"
-			std::vector<Quad*>* elses = new std::vector<Quad*>();
+			std::vector<std::shared_ptr<Quad>>* elses = new std::vector<std::shared_ptr<Quad>>();
 
-			jmpDownQuad->arg1 = g_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable.size();
 			do 
 			{
 				g_CurrentToken = GetNextToken();
-				Quad* elseQuad = ElseIf();
+				std::shared_ptr<Quad> elseQuad = ElseIf();
 
 				// This is used for the same as "jmpAfterIfQuad" but it's for every "if-else" except the first one.
-				Quad* jmpAfterElseQuad = new Quad();
+				std::shared_ptr<Quad> jmpAfterElseQuad = std::make_shared<Quad>();
 				jmpAfterElseQuad->operation = "JMP";
 				elses->push_back(jmpAfterElseQuad);
-				g_QuadTable->push_back(jmpAfterElseQuad);
+				g_QuadTable.push_back(jmpAfterElseQuad);
 
-				elseQuad->arg1 = g_QuadTable->size();
+				elseQuad->arg1 = g_QuadTable.size();
 				g_CurrentToken = GetNextToken();
 			}
-			while (g_CurrentToken->symbol == ";;");
+			while (g_CurrentToken.symbol == ";;");
 
-			if (g_CurrentToken->symbol == ";;-")
+			if (g_CurrentToken.symbol == ";;-")
 			{
 				g_CurrentToken = GetNextToken();
 				Else();
@@ -448,31 +452,31 @@ Quad* Parser::Stm()
 
 			for (auto& _else : *elses)
 			{
-				_else->arg1 = g_QuadTable->size();
+				_else->arg1 = g_QuadTable.size();
 			}
 
-			jmpAfterIfQuad->arg1 = g_QuadTable->size();
+			jmpAfterIfQuad->arg1 = g_QuadTable.size();
 
 		}
-		else if (g_CurrentToken->symbol == ";;-")
+		else if (g_CurrentToken.symbol == ";;-")
 		{
-			g_QuadTable->push_back(jmpAfterIfQuad);
+			g_QuadTable.push_back(jmpAfterIfQuad);
 
 			g_CurrentToken = GetNextToken();
-			jmpDownQuad->arg1 = g_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable.size();
 
 			Else();
 
 			g_CurrentToken = GetNextToken();
 			
-			jmpAfterIfQuad->arg1 = g_QuadTable->size();
+			jmpAfterIfQuad->arg1 = g_QuadTable.size();
 		}
 		else
 		{
-			jmpDownQuad->arg1 = g_QuadTable->size();
+			jmpDownQuad->arg1 = g_QuadTable.size();
 		}
 	}
-	else if (g_CurrentToken->symbol == ")")
+	else if (g_CurrentToken.symbol == ")")
 	{
 		return returnQuad;
 	}
@@ -480,21 +484,21 @@ Quad* Parser::Stm()
 	{
 		if (m_ExprLevel % 2 != 0)
 		{
-			if (g_CurrentToken->symbol == ";-")
+			if (g_CurrentToken.symbol == ";-")
 			{
 				// This is valid.
 				returnQuad->operation = "JMP";
-				g_QuadTable->push_back(returnQuad);
+				g_QuadTable.push_back(returnQuad);
 
 				g_CurrentToken = GetNextToken();
 				return returnQuad;
 			}
-			else if (g_CurrentToken->symbol == "-;")
+			else if (g_CurrentToken.symbol == "-;")
 			{
 				// This is valid.
 				returnQuad->operation = "JMP";
 				returnQuad->arg1 = 1;
-				g_QuadTable->push_back(returnQuad);
+				g_QuadTable.push_back(returnQuad);
 
 				g_CurrentToken = GetNextToken();
 				return returnQuad;
@@ -508,11 +512,11 @@ Quad* Parser::Stm()
 	return returnQuad;
 }
 
-Quad* Parser::ElseIf()
+std::shared_ptr<Quad> Parser::ElseIf()
 {
-	Quad* jmpDownQuad = new Quad();
+	std::shared_ptr<Quad> jmpDownQuad = std::make_shared<Quad>();
 
-	if (g_CurrentToken->symbol != "(")
+	if (g_CurrentToken.symbol != "(")
 	{
 		/*		ERROR		*/
 		throw std::runtime_error("Expected (");
@@ -522,16 +526,16 @@ Quad* Parser::ElseIf()
 
 	jmpDownQuad->operation = "BRZ";
 	jmpDownQuad->arg2 = Expr();
-	g_QuadTable->push_back(jmpDownQuad);
+	g_QuadTable.push_back(jmpDownQuad);
 
-	if (g_CurrentToken->symbol != ")")
+	if (g_CurrentToken.symbol != ")")
 	{
 		/*		ERROR		*/
 		throw std::runtime_error("Expected )");
 	}
 
 	g_CurrentToken = GetNextToken();
-	if (g_CurrentToken->symbol != "(")
+	if (g_CurrentToken.symbol != "(")
 	{
 		/*		ERROR		*/
 		throw std::runtime_error("Expected (");
@@ -539,14 +543,14 @@ Quad* Parser::ElseIf()
 
 	++m_ExprLevel;
 	// This quad is used to keep track of the scope in validation and debugging.
-	Quad* scopeUp = new Quad();
+	std::shared_ptr<Quad> scopeUp = std::make_shared<Quad>();
 	scopeUp->operation = "SUP";
-	g_QuadTable->push_back(scopeUp);
+	g_QuadTable.push_back(scopeUp);
 
 	g_CurrentToken = GetNextToken();
 	Block();
 
-	if (g_CurrentToken->symbol != ")")
+	if (g_CurrentToken.symbol != ")")
 	{
 		/*		ERROR		*/
 		throw std::runtime_error("Expected )");
@@ -554,16 +558,16 @@ Quad* Parser::ElseIf()
 
 	--m_ExprLevel;
 	// This quad is used to keep track of the scope in validation and debugging.
-	Quad* scopeDown = new Quad();
+	std::shared_ptr<Quad> scopeDown = std::make_shared<Quad>();
 	scopeDown->operation = "SDW";
-	g_QuadTable->push_back(scopeDown);
+	g_QuadTable.push_back(scopeDown);
 
 	return jmpDownQuad;
 }
 
 string Parser::Else()
 {
-	if (g_CurrentToken->symbol != "(")
+	if (g_CurrentToken.symbol != "(")
 	{
 		/*		ERROR		*/
 		throw std::runtime_error("Expected (");
@@ -571,14 +575,14 @@ string Parser::Else()
 
 	++m_ExprLevel;
 	// This quad is used to keep track of the scope in validation and debugging.
-	Quad* scopeUp = new Quad();
+	std::shared_ptr<Quad> scopeUp = std::make_shared<Quad>();
 	scopeUp->operation = "SUP";
-	g_QuadTable->push_back(scopeUp);
+	g_QuadTable.push_back(scopeUp);
 
 	g_CurrentToken = GetNextToken();
 	Block();
 
-	if (g_CurrentToken->symbol != ")")
+	if (g_CurrentToken.symbol != ")")
 	{
 		/*		ERROR		*/
 		throw std::runtime_error("Expected )");
@@ -586,9 +590,9 @@ string Parser::Else()
 
 	--m_ExprLevel;
 	// This quad is used to keep track of the scope in validation and debugging.
-	Quad* scopeDown = new Quad();
+	std::shared_ptr<Quad> scopeDown = std::make_shared<Quad>();
 	scopeDown->operation = "SDW";
-	g_QuadTable->push_back(scopeDown);
+	g_QuadTable.push_back(scopeDown);
 
 	return "";
 }
@@ -604,16 +608,16 @@ size_t Parser::Equality()
 
 	arg1 = Comparison();
 
-	if (g_CurrentToken->symbol == ":::")
+	if (g_CurrentToken.symbol == ":::")
 	{
-		string operation = g_CurrentToken->symbol;
+		string operation = g_CurrentToken.symbol;
 		
 		g_CurrentToken = GetNextToken();
 		arg2 = Comparison();
 
 		result = GenCustomVar();
-		Quad* quad = new Quad{ operation, arg1, arg2, result };
-		g_QuadTable->push_back(quad);
+		std::shared_ptr<Quad> quad = std::make_shared<Quad>(Quad{ operation, arg1, arg2, result });
+		g_QuadTable.push_back(quad);
 		arg1 = result;
 	}
 
@@ -626,14 +630,14 @@ size_t Parser::Comparison()
 
 	arg1 = Term();
 
-	if (g_CurrentToken->symbol == ":;")
+	if (g_CurrentToken.symbol == ":;")
 	{
-		string operation = g_CurrentToken->symbol;
+		string operation = g_CurrentToken.symbol;
 
 		g_CurrentToken = GetNextToken();
 		arg2 = Comparison();
 		result = GenCustomVar();
-		g_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
+		g_QuadTable.push_back(std::make_shared<Quad>(Quad{ operation, arg1, arg2, result }));
 		arg1 = result;
 	}
 
@@ -646,14 +650,14 @@ size_t Parser::Term()
 
 	arg1 = Factor();
 
-	while (g_CurrentToken->symbol == ";;;;" || g_CurrentToken->symbol == "::::")
+	while (g_CurrentToken.symbol == ";;;;" || g_CurrentToken.symbol == "::::")
 	{
-		string operation = g_CurrentToken->symbol;
+		string operation = g_CurrentToken.symbol;
 
 		g_CurrentToken = GetNextToken();
 		arg2 = Term();
 		result = GenCustomVar();
-		g_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
+		g_QuadTable.push_back(std::make_shared<Quad>(Quad{ operation, arg1, arg2, result }));
 		arg1 = result;
 	}
 
@@ -667,13 +671,13 @@ size_t Parser::Factor()
 	arg1 = Primary();
 
 	g_CurrentToken = GetNextToken();
-	while (g_CurrentToken->symbol == "::;;" || g_CurrentToken->symbol == ";;::")
+	while (g_CurrentToken.symbol == "::;;" || g_CurrentToken.symbol == ";;::")
 	{
-		string operation = g_CurrentToken->symbol;
+		string operation = g_CurrentToken.symbol;
 		g_CurrentToken = GetNextToken();
 		arg2 = Factor();
 		result = GenCustomVar();
-		g_QuadTable->push_back(new Quad{ operation, arg1, arg2, result });
+		g_QuadTable.push_back(std::make_shared<Quad>(Quad{ operation, arg1, arg2, result }));
 		arg1 = result;
 	}
 
@@ -684,26 +688,26 @@ size_t Parser::Primary()
 {
 	size_t arg;
 
-	if (g_CurrentToken->code == SymbolCode::Identifier)
+	if (g_CurrentToken.code == SymbolCode::Identifier)
 	{
 		arg = m_TableIndex;
 	}
-	else if (g_CurrentToken->code == SymbolCode::IntegerLiteral)
+	else if (g_CurrentToken.code == SymbolCode::IntegerLiteral)
 	{
 		arg = m_TableIndex;
 	}
-	else if (g_CurrentToken->symbol == "(")
+	else if (g_CurrentToken.symbol == "(")
 	{
 		g_CurrentToken = GetNextToken();
 		arg = Expr();
 		
-		if (g_CurrentToken->symbol != ")")
+		if (g_CurrentToken.symbol != ")")
 		{
 			/*		ERROR		*/
 			throw std::runtime_error("Expected )");
 		}
 		
-		if (CheckNextToken(true)->symbol == "\n")
+		if (CheckNextToken(true).symbol == "\n")
 		{
 			ReturnWithOneToken();
 		}
@@ -742,9 +746,9 @@ void Parser::SemanticValidation()
 	};
 
 	int currentQuadIndex = 0;
-	while (currentQuadIndex < g_QuadTable->size())
+	while (currentQuadIndex < g_QuadTable.size())
 	{
-		Quad* currentQuad = g_QuadTable->at(currentQuadIndex);
+		std::shared_ptr<Quad> currentQuad = g_QuadTable.at(currentQuadIndex);
 		string quadStrResult;
 		string quadStrArg1;
 		string quadStrArg2;

@@ -7,16 +7,16 @@ constexpr size_t GetArraySize(const T(&)[N]) noexcept {
 	return N;
 }
 
-inline bool IsInteger(std::string string) {
+inline bool IsInteger(std::string _string) {
 	int value;
-	auto [ptr, ec] = std::from_chars(string.data(), string.data() + string.size(), value);
+	auto [ptr, ec] = std::from_chars(_string.data(), _string.data() + _string.size(), value);
 
-	return ec == std::errc{} && ptr == string.data() + string.size();
+	return ec == std::errc{} && ptr == _string.data() + _string.size();
 }
 
-inline int ConvertToInt(std::string string) {
+inline int ConvertToInt(std::string _string) {
 	int value;
-	auto [ptr, ec] = std::from_chars(string.data(), string.data() + string.size(), value);
+	auto [ptr, ec] = std::from_chars(_string.data(), _string.data() + _string.size(), value);
 
 	return value;
 }
